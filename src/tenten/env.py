@@ -89,7 +89,8 @@ class TenTenEnv(gym.Env):
         cleared = int(cleared)
         self.steps += 1
         self.lines += cleared
-        self.score += Engine.score(int(m.sum()), cleared)
+        points = Engine.score(int(m.sum()), cleared)
+        self.score += points
 
         self.hand[slot] = None
         if all(h is None for h in self.hand):
@@ -98,6 +99,6 @@ class TenTenEnv(gym.Env):
         mask = self.action_mask()
         terminated = not mask.any()
         truncated = (not terminated) and self.steps >= self.max_steps
-        reward = float(cleared)
+        reward = float(points)  # recompensa = puntos de la jugada, la misma métrica que se evalúa
 
         return self._obs(), reward, terminated, truncated, self._info(mask)

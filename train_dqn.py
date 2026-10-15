@@ -72,10 +72,8 @@ def main():
             eps = epsilon_at(step, c)
 
             action = agent.choose(obs, info["action_mask"], eps)
-            score_before = env.score
-            next_obs, _, terminated, truncated, info = env.step(action)
-
-            reward = (info["score"] - score_before) * c["reward_scale"]
+            next_obs, reward, terminated, truncated, info = env.step(action)
+            reward *= c["reward_scale"]
 
             agent.remember(
                 obs, action, reward, next_obs, info["action_mask"], terminated

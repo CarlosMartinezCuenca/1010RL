@@ -37,7 +37,7 @@ def test_step_clears_a_line_and_gives_reward():
     env.board[0:9] = True
     env.hand = [NAMES.index("dot"), NAMES.index("dot"), NAMES.index("dot")]
     obs, reward, terminated, truncated, info = env.step(9)
-    assert reward == 1.0
+    assert reward == 1 + 10  # 1 casilla + bonus de 1 línea
     assert not env.board.any()
     assert info["lines"] == 1
     assert info["score"] == 1 + 10

@@ -12,3 +12,6 @@ wheels/
 # MlFlow
 mlflow.db
 mlruns/
+
+# Models folder
+models/
