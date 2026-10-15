@@ -12,6 +12,9 @@ class Engine:
 
         self.masks = []
         self.anchors = []
+        self.rows = []
+        self.planes = []
+
         for piece in self.pieces:
             h, w = piece.shape
             ms, an = [], []
@@ -24,6 +27,17 @@ class Engine:
             self.masks.append(np.array(ms))
             self.anchors.append(np.array(an))
 
+            rows = np.full(self.n, -1)
+            rows[an] = np.arange(len(an))
+            self.rows.append(rows)
+
+            plane = np.zeros((size, size), dtype=np.uint8)
+            plane[:h, :w] = piece
+            self.planes.append(plane.ravel())
+
+        self.all_masks = np.concatenate(self.masks).astype(np.float32)
+        self.starts = np.cumsum([0] + [len(m) for m in self.masks[:-1]])
+
     def valid(self, board: np.ndarray, k: int) -> np.ndarray:
         return ~(self.masks[k] & board).any(axis=1)
 
@@ -31,18 +45,26 @@ class Engine:
         return bool(self.valid(board, k).any())
 
     def mask_at(self, k: int, anchor: int) -> np.ndarray | None:
-        idx = np.flatnonzero(self.anchors[k] == anchor)
-        if idx.size == 0:
-            return None
-        return self.masks[k][idx[0]]
+        row = self.rows[k][anchor]
 
-    def clear(self, board: np.ndarray) -> tuple[np.ndarray, int]:
-        b = board.reshape(self.size, self.size).copy()
-        full_rows = b.all(axis=1)
-        full_cols = b.all(axis=0)
-        b[full_rows, :] = False
-        b[:, full_cols] = False
-        return b.ravel(), int(full_rows.sum() + full_cols.sum())
+        if row < 0:
+            return None
+
+        return self.masks[k][row]
+
+    def clear(self, boards: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        b = boards.reshape(-1, self.size, self.size)
+        full_rows = b.all(axis=2, keepdims=True)
+        full_cols = b.all(axis=1, keepdims=True)
+
+        new = b & ~full_rows & ~full_cols
+        lines = full_rows.sum(axis=(1, 2)) + full_cols.sum(axis=(1, 2))
+
+        return new.reshape(boards.shape), lines.reshape(boards.shape[:-1])
+
+    def count_places(self, boards: np.ndarray) -> np.ndarray:
+        hits = boards.astype(np.float32) @ self.all_masks.T
+        return np.add.reduceat((hits == 0).astype(np.int32), self.starts, axis=1)
 
     @staticmethod
     def score(cells: int, lines: int) -> int:

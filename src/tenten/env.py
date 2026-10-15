@@ -25,9 +25,7 @@ class TenTenEnv(gym.Env):
         self.max_steps = max_steps
         self.engine = Engine(size, piece_names)
 
-        self.observation_space = spaces.Box(
-            0, 1, shape=((1 + hand_size) * self.n,), dtype=np.uint8
-        )
+        self.observation_space = spaces.Box(0, 1, shape=((1 + hand_size) * self.n,))
         self.action_space = spaces.Discrete(hand_size * self.n)
 
         self.board = np.zeros(self.n, dtype=bool)
@@ -37,7 +35,6 @@ class TenTenEnv(gym.Env):
         self.lines = 0
         self.score = 0
 
-    # ------------------------------------------------------------------ ayudas
     def _deal(self):
         n_pieces = len(self.engine.pieces)
         self.hand = [
@@ -54,14 +51,9 @@ class TenTenEnv(gym.Env):
         return mask
 
     def _obs(self) -> np.ndarray:
+        empty = np.zeros(self.n, dtype=np.uint8)  # hueco vacío -> plano de ceros
         planes = [self.board.astype(np.uint8)]
-        for k in self.hand:
-            plane = np.zeros((self.size, self.size), dtype=np.uint8)
-            if k is not None:  # hueco vacío -> plano de ceros
-                piece = self.engine.pieces[k]
-                h, w = piece.shape
-                plane[:h, :w] = piece
-            planes.append(plane.ravel())
+        planes += [empty if k is None else self.engine.planes[k] for k in self.hand]
         return np.concatenate(planes)
 
     def _info(self, mask: np.ndarray) -> dict:
@@ -92,6 +84,7 @@ class TenTenEnv(gym.Env):
             return self._obs(), 0.0, True, False, self._info(self.action_mask())
 
         self.board, cleared = self.engine.clear(self.board | m)
+        cleared = int(cleared)
         self.steps += 1
         self.lines += cleared
         self.score += Engine.score(int(m.sum()), cleared)

@@ -6,7 +6,7 @@ uv run mlflow ui --backend-store-uri sqlite:///mlflow.db      # http://127.0.0.1
 import mlflow
 import numpy as np
 
-from agents.baselines import GreedyAgent, RandomAgent
+from agents.baselines import GreedyAgent, RandomAgent, HeuristicAgent
 from tenten.env import TenTenEnv
 
 
@@ -39,6 +39,7 @@ def main():
     for name, agent in [
         ("random", RandomAgent(seed=0)),
         ("greedy", GreedyAgent(seed=0)),
+        ("heuristic", HeuristicAgent(seed=0)),
     ]:
         results = play_games(agent, env, n_games)
         with mlflow.start_run(run_name=name):

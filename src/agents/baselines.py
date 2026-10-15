@@ -15,18 +15,49 @@ class GreedyAgent:
         self.rng = np.random.default_rng(seed)
 
     def act(self, env, info):
-        best_actions, best_lines = [], -1
+        engine = env.engine
+        actions, lines = [], []
 
-        for action in np.flatnonzero(info["action_mask"]):
-            slot, anchor = divmod(int(action), env.n)
-            piece = env.hand[slot]
+        for slot, k in enumerate(env.hand):
+            if k is None:
+                continue
 
-            cells = env.engine.mask_at(piece, anchor)
-            _, lines = env.engine.clear(env.board | cells)
+            ok = engine.valid(env.board, k)
 
-            if lines > best_lines:
-                best_actions, best_lines = [int(action)], lines
-            elif lines == best_lines:
-                best_actions.append(int(action))
+            actions.append(slot * env.n + engine.anchors[k][ok])
+            lines.append(engine.clear(engine.masks[k][ok] | env.board)[1])
 
-        return int(self.rng.choice(best_actions))
+        actions, lines = np.concatenate(actions), np.concatenate(lines)
+        return int(self.rng.choice(actions[lines == lines.max()]))
+
+
+class HeuristicAgent:
+
+    def __init__(self, seed=None):
+        self.rng = np.random.default_rng(seed)
+
+    def act(self, env, info):
+        engine = env.engine
+        actions, values = [], []
+
+        for slot, k in enumerate(env.hand):
+            if k is None:
+                continue
+
+            ok = engine.valid(env.board, k)
+            new_boards, lines = engine.clear(engine.masks[k][ok] | env.board)
+
+            n_places = engine.count_places(new_boards)
+            mobility = np.log1p(n_places).mean(axis=1)
+
+            blocked = (n_places == 0).mean(axis=1)
+            rest = [j for s, j in enumerate(env.hand) if j is not None and s != slot]
+            stuck = (n_places[:, rest] == 0).sum(axis=1)
+
+            value = lines + mobility - 3 * blocked - 10 * stuck
+
+            actions.append(slot * env.n + engine.anchors[k][ok])
+            values.append(value)
+
+        actions, values = np.concatenate(actions), np.concatenate(values)
+        return int(self.rng.choice(actions[values == values.max()]))
