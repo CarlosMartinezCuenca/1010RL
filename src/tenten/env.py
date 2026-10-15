@@ -25,7 +25,9 @@ class TenTenEnv(gym.Env):
         self.max_steps = max_steps
         self.engine = Engine(size, piece_names)
 
-        self.observation_space = spaces.Box(0, 1, shape=((1 + hand_size) * self.n,))
+        self.observation_space = spaces.Box(
+            0, 1, shape=((1 + hand_size) * self.n,), dtype=np.uint8
+        )
         self.action_space = spaces.Discrete(hand_size * self.n)
 
         self.board = np.zeros(self.n, dtype=bool)
