@@ -8,3 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
+
+# MlFlow
+mlflow.db
+mlruns/

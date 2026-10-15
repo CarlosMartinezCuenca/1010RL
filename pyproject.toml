@@ -9,16 +9,22 @@ authors = [
 requires-python = ">=3.10"
 dependencies = [
     "gymnasium>=1.4.0",
+    "mlflow>=3.17.1",
     "numpy>=2.2.6",
     "torch>=2.14.1",
 ]
-
-[project.scripts]
-1010-3 = "1010_3:main"
 
 [build-system]
 requires = ["uv_build>=0.13.0,<0.14.0"]
 build-backend = "uv_build"
 
+[tool.uv.build-backend]
+module-name = "tenten"
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
