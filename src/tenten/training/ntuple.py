@@ -1,28 +1,21 @@
-"""Entrena la red de n-tuplas (TD(0) sobre afterstates) y lo guarda en MLflow.
-
-Uso:
-    uv run python train_ntuple.py
-    uv run mlflow ui --backend-store-uri sqlite:///mlflow.db      # http://127.0.0.1:5000
-"""
-
 import os
 
 import mlflow
 import numpy as np
 
-from agents.ntuple import NTupleAgent, SearchAgent
-from evaluate import play_games
-from tenten.env import TenTenEnv
+from tenten.agents.ntuple import NTupleAgent, SearchAgent
+from tenten.evaluation import play_games
+from tenten.tracking import setup_mlflow
 
 CONFIG = {
     "total_steps": 4_500_000,
-    # alpha va bajando por fases: primero aprende rápido, luego afina
     "alpha_phases": [(0, 0.1), (2_000_000, 0.025), (3_500_000, 0.006)],
     "gamma": 0.95,
-    "reward_scale": 0.1,  # recompensa = puntos de la jugada × 0.1, como la DQN
-    "loss_penalty": 0.0,  # sin castigo extra al perder (ponlo negativo para experimentar)
-    "eps_start": 0.05,  # muy poca exploración: una jugada al azar suele matar
-    "eps_decay_steps": 50_000,  # y a partir de aquí, ninguna
+    "reward_scale": 0.1,
+    "loss_penalty": 0.0,
+    "eps_start": 0.05,
+    "eps_end": 0.0,
+    "eps_decay_steps": 50_000,
     "eval_every": 100_000,
     "eval_games": 30,
     "seed": 0,
@@ -38,26 +31,32 @@ def alpha_at(step, c):
 
 
 def epsilon_at(step, c):
-    return c["eps_start"] * max(0.0, 1 - step / c["eps_decay_steps"])
+    frac = max(0.0, 1 - step / c["eps_decay_steps"])
+    return c["eps_end"] + frac * (c["eps_start"] - c["eps_end"])
 
 
-def main():
-    c = CONFIG
-    env = TenTenEnv()
-    eval_env = TenTenEnv()
+def train(c, make_env, experiment):
+    """Entrena en el entorno de make_env y lo registra en mlruns/<experiment>.
+    Devuelve el historial de evaluaciones y la ruta del mejor modelo."""
+    env = make_env()
+    eval_env = make_env()
     agent = NTupleAgent(
+        size=env.size,
         gamma=c["gamma"],
         reward_scale=c["reward_scale"],
         loss_penalty=c["loss_penalty"],
         seed=c["seed"],
     )
-    os.makedirs("models", exist_ok=True)
+    run_name = f"ntuple_seed{c['seed']}"
+    last_path = f"models/{experiment}/{run_name}_last.npy"
+    best_path = f"models/{experiment}/{run_name}_best.npy"
+    os.makedirs(f"models/{experiment}", exist_ok=True)
     best_score = -1
     errors = []
+    history = []
 
-    mlflow.set_tracking_uri("sqlite:///mlflow.db")
-    mlflow.set_experiment("ntuple")
-    with mlflow.start_run(run_name="ntuple"):
+    setup_mlflow(experiment)
+    with mlflow.start_run(run_name=run_name):
         mlflow.log_params({**c, "n_weights": len(agent.net.weights)})
 
         obs, info = env.reset(seed=c["seed"])
@@ -94,22 +93,21 @@ def main():
                     step=step,
                 )
                 errors = []
+                history.append({"step": step, **{k: float(np.mean(v)) for k, v in results.items()}})
                 print(
                     f"paso {step:>8} | puntos {score:8.1f} | alpha {agent.alpha}",
                     flush=True,
                 )
-                agent.save("models/ntuple_last.npy")
+                agent.save(last_path)
                 if score > best_score:
                     best_score = score
-                    agent.save("models/ntuple_best.npy")
+                    agent.save(best_path)
 
         for name, player in [("final", agent), ("final_search", SearchAgent(agent))]:
             results = play_games(player, eval_env, c["eval_games"], seed=10_000)
             mlflow.log_metric(f"{name}_score", float(np.mean(results["score"])))
-        mlflow.log_artifact("models/ntuple_last.npy")
-        mlflow.log_artifact("models/ntuple_best.npy")
+        mlflow.log_artifact(last_path)
+        mlflow.log_artifact(best_path)
         print(f"Mejor evaluación: {best_score:.1f} puntos")
+    return history, best_path
 
-
-if __name__ == "__main__":
-    main()

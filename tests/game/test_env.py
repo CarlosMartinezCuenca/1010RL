@@ -1,7 +1,7 @@
 import numpy as np
 
-from tenten.env import TenTenEnv
-from tenten.pieces import PIECES
+from tenten.game.env import TenTenEnv
+from tenten.game.pieces import PIECES
 
 NAMES = list(PIECES)
 

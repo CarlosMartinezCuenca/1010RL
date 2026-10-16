@@ -1,17 +1,12 @@
-"""
-uv run python train_dqn.py
-uv run mlflow ui --backend-store-uri sqlite:///mlflow.db      # http://127.0.0.1:5000
-"""
-
 import os
 
 import mlflow
 import numpy as np
 import torch
 
-from agents.dqn import DQNAgent
-from evaluate import play_games
-from tenten.env import TenTenEnv
+from tenten.agents.dqn import DQNAgent
+from tenten.evaluation import play_games
+from tenten.tracking import setup_mlflow
 
 CONFIG = {
     "total_steps": 300_000,
@@ -33,18 +28,18 @@ CONFIG = {
 }
 
 
-torch.set_num_threads(1)
-
 
 def epsilon_at(step, c):
     frac = min(1.0, step / c["eps_decay_steps"])
     return c["eps_start"] + frac * (c["eps_end"] - c["eps_start"])
 
 
-def main():
-    c = CONFIG
-    env = TenTenEnv()
-    eval_env = TenTenEnv()
+def train(c, make_env, experiment):
+    """Entrena en el entorno de make_env y lo registra en mlruns/<experiment>.
+    Devuelve el historial de evaluaciones y la ruta del mejor modelo."""
+    torch.set_num_threads(1)  # con una red tan pequeña, más hilos no compensan
+    env = make_env()
+    eval_env = make_env()
     obs_size = env.observation_space.shape[0]
     n_actions = env.action_space.n
     agent = DQNAgent(
@@ -58,13 +53,15 @@ def main():
         seed=c["seed"],
     )
 
-    os.makedirs("models", exist_ok=True)
+    run_name = f"dqn_seed{c['seed']}"
+    model_path = f"models/{experiment}/{run_name}_best.pt"
+    os.makedirs(f"models/{experiment}", exist_ok=True)
     best_score = -1
     losses = []
+    history = []
 
-    mlflow.set_tracking_uri("sqlite:///mlflow.db")
-    mlflow.set_experiment("dqn")
-    with mlflow.start_run(run_name="dqn"):
+    setup_mlflow(experiment)
+    with mlflow.start_run(run_name=run_name):
         mlflow.log_params(c)
 
         obs, info = env.reset(seed=c["seed"])
@@ -102,6 +99,7 @@ def main():
                     step=step,
                 )
                 losses = []
+                history.append({"step": step, **{k: float(np.mean(v)) for k, v in results.items()}})
                 print(
                     f"paso {step:>7} | puntos {score:7.1f} | epsilon {eps:.2f}",
                     flush=True,
@@ -109,11 +107,9 @@ def main():
 
                 if score > best_score:
                     best_score = score
-                    agent.save("models/dqn_best.pt")
+                    agent.save(model_path)
 
-        mlflow.log_artifact("models/dqn_best.pt")
+        mlflow.log_artifact(model_path)
         print(f"Mejor evaluación: {best_score:.1f} puntos")
+    return history, model_path
 
-
-if __name__ == "__main__":
-    main()

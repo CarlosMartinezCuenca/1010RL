@@ -1,9 +1,9 @@
 import numpy as np
 
-from agents.baselines import GreedyAgent, RandomAgent, HeuristicAgent
-from evaluate import play_games
-from tenten.env import TenTenEnv
-from tenten.pieces import PIECES
+from tenten.agents.baselines import GreedyAgent, HeuristicAgent, RandomAgent
+from tenten.evaluation import play_games
+from tenten.game.env import TenTenEnv
+from tenten.game.pieces import PIECES
 
 DOT = list(PIECES).index("dot")
 

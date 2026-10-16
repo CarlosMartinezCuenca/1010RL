@@ -1,0 +1,925 @@
+{
+  "final_scores": {
+    "random": 48.65,
+    "greedy": 47.05,
+    "heuristic": 126.55,
+    "tabular": 323.0,
+    "dqn": 2480.0,
+    "ntuple": 714.0
+  },
+  "best": "dqn",
+  "best_model": "models/5x5_small_L/dqn_seed0_best.pt",
+  "models": {
+    "tabular": "models/5x5_small_L/tabular_seed0_best.pkl",
+    "dqn": "models/5x5_small_L/dqn_seed0_best.pt",
+    "ntuple": "models/5x5_small_L/ntuple_seed0_best.npy"
+  },
+  "histories": {
+    "tabular": [
+      {
+        "step": 20000,
+        "score": 25.0,
+        "lines": 1.0,
+        "steps": 5.0
+      },
+      {
+        "step": 40000,
+        "score": 67.0,
+        "lines": 3.0,
+        "steps": 9.0
+      },
+      {
+        "step": 60000,
+        "score": 122.0,
+        "lines": 6.0,
+        "steps": 14.0
+      },
+      {
+        "step": 80000,
+        "score": 106.0,
+        "lines": 5.0,
+        "steps": 12.0
+      },
+      {
+        "step": 100000,
+        "score": 106.0,
+        "lines": 5.0,
+        "steps": 12.0
+      },
+      {
+        "step": 120000,
+        "score": 106.0,
+        "lines": 5.0,
+        "steps": 12.0
+      },
+      {
+        "step": 140000,
+        "score": 161.0,
+        "lines": 8.0,
+        "steps": 17.0
+      },
+      {
+        "step": 160000,
+        "score": 161.0,
+        "lines": 8.0,
+        "steps": 17.0
+      },
+      {
+        "step": 180000,
+        "score": 161.0,
+        "lines": 8.0,
+        "steps": 17.0
+      },
+      {
+        "step": 200000,
+        "score": 161.0,
+        "lines": 8.0,
+        "steps": 17.0
+      },
+      {
+        "step": 220000,
+        "score": 161.0,
+        "lines": 8.0,
+        "steps": 17.0
+      },
+      {
+        "step": 240000,
+        "score": 161.0,
+        "lines": 8.0,
+        "steps": 17.0
+      },
+      {
+        "step": 260000,
+        "score": 161.0,
+        "lines": 8.0,
+        "steps": 17.0
+      },
+      {
+        "step": 280000,
+        "score": 161.0,
+        "lines": 8.0,
+        "steps": 17.0
+      },
+      {
+        "step": 300000,
+        "score": 161.0,
+        "lines": 8.0,
+        "steps": 17.0
+      },
+      {
+        "step": 320000,
+        "score": 223.0,
+        "lines": 11.0,
+        "steps": 21.0
+      },
+      {
+        "step": 340000,
+        "score": 223.0,
+        "lines": 11.0,
+        "steps": 21.0
+      },
+      {
+        "step": 360000,
+        "score": 249.0,
+        "lines": 12.0,
+        "steps": 23.0
+      },
+      {
+        "step": 380000,
+        "score": 310.0,
+        "lines": 16.0,
+        "steps": 30.0
+      },
+      {
+        "step": 400000,
+        "score": 310.0,
+        "lines": 16.0,
+        "steps": 30.0
+      },
+      {
+        "step": 420000,
+        "score": 310.0,
+        "lines": 16.0,
+        "steps": 30.0
+      },
+      {
+        "step": 440000,
+        "score": 310.0,
+        "lines": 16.0,
+        "steps": 30.0
+      },
+      {
+        "step": 460000,
+        "score": 310.0,
+        "lines": 16.0,
+        "steps": 30.0
+      },
+      {
+        "step": 480000,
+        "score": 310.0,
+        "lines": 16.0,
+        "steps": 30.0
+      },
+      {
+        "step": 500000,
+        "score": 310.0,
+        "lines": 16.0,
+        "steps": 30.0
+      },
+      {
+        "step": 520000,
+        "score": 310.0,
+        "lines": 16.0,
+        "steps": 30.0
+      },
+      {
+        "step": 540000,
+        "score": 310.0,
+        "lines": 16.0,
+        "steps": 30.0
+      },
+      {
+        "step": 560000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 580000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 600000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 620000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 640000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 660000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 680000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 700000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 720000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 740000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 760000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 780000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 800000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 820000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 840000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 860000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 880000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 900000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 920000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 940000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 960000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 980000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      },
+      {
+        "step": 1000000,
+        "score": 323.0,
+        "lines": 17.0,
+        "steps": 31.0
+      }
+    ],
+    "dqn": [
+      {
+        "step": 20000,
+        "score": 93.0,
+        "lines": 4.0,
+        "steps": 11.0
+      },
+      {
+        "step": 40000,
+        "score": 183.0,
+        "lines": 10.0,
+        "steps": 21.0
+      },
+      {
+        "step": 60000,
+        "score": 240.0,
+        "lines": 15.0,
+        "steps": 30.0
+      },
+      {
+        "step": 80000,
+        "score": 167.0,
+        "lines": 9.0,
+        "steps": 19.0
+      },
+      {
+        "step": 100000,
+        "score": 167.0,
+        "lines": 9.0,
+        "steps": 19.0
+      },
+      {
+        "step": 120000,
+        "score": 164.0,
+        "lines": 8.0,
+        "steps": 18.0
+      },
+      {
+        "step": 140000,
+        "score": 164.0,
+        "lines": 8.0,
+        "steps": 18.0
+      },
+      {
+        "step": 160000,
+        "score": 164.0,
+        "lines": 8.0,
+        "steps": 18.0
+      },
+      {
+        "step": 180000,
+        "score": 164.0,
+        "lines": 8.0,
+        "steps": 18.0
+      },
+      {
+        "step": 200000,
+        "score": 338.0,
+        "lines": 19.0,
+        "steps": 36.0
+      },
+      {
+        "step": 220000,
+        "score": 297.0,
+        "lines": 16.0,
+        "steps": 29.0
+      },
+      {
+        "step": 240000,
+        "score": 316.0,
+        "lines": 17.0,
+        "steps": 32.0
+      },
+      {
+        "step": 260000,
+        "score": 2460.0,
+        "lines": 128.0,
+        "steps": 200.0
+      },
+      {
+        "step": 280000,
+        "score": 448.0,
+        "lines": 26.0,
+        "steps": 46.0
+      },
+      {
+        "step": 300000,
+        "score": 419.0,
+        "lines": 24.0,
+        "steps": 43.0
+      },
+      {
+        "step": 320000,
+        "score": 575.0,
+        "lines": 32.0,
+        "steps": 55.0
+      },
+      {
+        "step": 340000,
+        "score": 284.0,
+        "lines": 15.0,
+        "steps": 28.0
+      },
+      {
+        "step": 360000,
+        "score": 924.0,
+        "lines": 52.0,
+        "steps": 88.0
+      },
+      {
+        "step": 380000,
+        "score": 264.0,
+        "lines": 14.0,
+        "steps": 28.0
+      },
+      {
+        "step": 400000,
+        "score": 2420.0,
+        "lines": 128.0,
+        "steps": 200.0
+      },
+      {
+        "step": 420000,
+        "score": 2130.0,
+        "lines": 124.0,
+        "steps": 200.0
+      },
+      {
+        "step": 440000,
+        "score": 2320.0,
+        "lines": 126.0,
+        "steps": 200.0
+      },
+      {
+        "step": 460000,
+        "score": 2340.0,
+        "lines": 126.0,
+        "steps": 200.0
+      },
+      {
+        "step": 480000,
+        "score": 2200.0,
+        "lines": 125.0,
+        "steps": 200.0
+      },
+      {
+        "step": 500000,
+        "score": 2160.0,
+        "lines": 124.0,
+        "steps": 200.0
+      },
+      {
+        "step": 520000,
+        "score": 1230.0,
+        "lines": 67.0,
+        "steps": 110.0
+      },
+      {
+        "step": 540000,
+        "score": 2420.0,
+        "lines": 129.0,
+        "steps": 200.0
+      },
+      {
+        "step": 560000,
+        "score": 306.0,
+        "lines": 17.0,
+        "steps": 32.0
+      },
+      {
+        "step": 580000,
+        "score": 2270.0,
+        "lines": 126.0,
+        "steps": 200.0
+      },
+      {
+        "step": 600000,
+        "score": 2170.0,
+        "lines": 125.0,
+        "steps": 200.0
+      },
+      {
+        "step": 620000,
+        "score": 1953.0,
+        "lines": 111.0,
+        "steps": 181.0
+      },
+      {
+        "step": 640000,
+        "score": 646.0,
+        "lines": 36.0,
+        "steps": 62.0
+      },
+      {
+        "step": 660000,
+        "score": 2420.0,
+        "lines": 129.0,
+        "steps": 200.0
+      },
+      {
+        "step": 680000,
+        "score": 2250.0,
+        "lines": 126.0,
+        "steps": 200.0
+      },
+      {
+        "step": 700000,
+        "score": 2370.0,
+        "lines": 126.0,
+        "steps": 200.0
+      },
+      {
+        "step": 720000,
+        "score": 2210.0,
+        "lines": 125.0,
+        "steps": 200.0
+      },
+      {
+        "step": 740000,
+        "score": 2230.0,
+        "lines": 126.0,
+        "steps": 200.0
+      },
+      {
+        "step": 760000,
+        "score": 545.0,
+        "lines": 31.0,
+        "steps": 55.0
+      },
+      {
+        "step": 780000,
+        "score": 2220.0,
+        "lines": 124.0,
+        "steps": 200.0
+      },
+      {
+        "step": 800000,
+        "score": 2450.0,
+        "lines": 127.0,
+        "steps": 200.0
+      },
+      {
+        "step": 820000,
+        "score": 2480.0,
+        "lines": 128.0,
+        "steps": 200.0
+      },
+      {
+        "step": 840000,
+        "score": 2310.0,
+        "lines": 125.0,
+        "steps": 200.0
+      },
+      {
+        "step": 860000,
+        "score": 2400.0,
+        "lines": 128.0,
+        "steps": 200.0
+      },
+      {
+        "step": 880000,
+        "score": 2280.0,
+        "lines": 126.0,
+        "steps": 200.0
+      },
+      {
+        "step": 900000,
+        "score": 2270.0,
+        "lines": 125.0,
+        "steps": 200.0
+      },
+      {
+        "step": 920000,
+        "score": 2200.0,
+        "lines": 124.0,
+        "steps": 200.0
+      },
+      {
+        "step": 940000,
+        "score": 2200.0,
+        "lines": 124.0,
+        "steps": 200.0
+      },
+      {
+        "step": 960000,
+        "score": 2320.0,
+        "lines": 127.0,
+        "steps": 200.0
+      },
+      {
+        "step": 980000,
+        "score": 2410.0,
+        "lines": 128.0,
+        "steps": 200.0
+      },
+      {
+        "step": 1000000,
+        "score": 2420.0,
+        "lines": 129.0,
+        "steps": 200.0
+      }
+    ],
+    "ntuple": [
+      {
+        "step": 20000,
+        "score": 160.0,
+        "lines": 9.0,
+        "steps": 20.0
+      },
+      {
+        "step": 40000,
+        "score": 83.0,
+        "lines": 4.0,
+        "steps": 11.0
+      },
+      {
+        "step": 60000,
+        "score": 83.0,
+        "lines": 4.0,
+        "steps": 11.0
+      },
+      {
+        "step": 80000,
+        "score": 160.0,
+        "lines": 9.0,
+        "steps": 20.0
+      },
+      {
+        "step": 100000,
+        "score": 183.0,
+        "lines": 10.0,
+        "steps": 21.0
+      },
+      {
+        "step": 120000,
+        "score": 157.0,
+        "lines": 9.0,
+        "steps": 19.0
+      },
+      {
+        "step": 140000,
+        "score": 218.0,
+        "lines": 13.0,
+        "steps": 26.0
+      },
+      {
+        "step": 160000,
+        "score": 212.0,
+        "lines": 12.0,
+        "steps": 24.0
+      },
+      {
+        "step": 180000,
+        "score": 222.0,
+        "lines": 12.0,
+        "steps": 24.0
+      },
+      {
+        "step": 200000,
+        "score": 270.0,
+        "lines": 16.0,
+        "steps": 30.0
+      },
+      {
+        "step": 220000,
+        "score": 151.0,
+        "lines": 8.0,
+        "steps": 17.0
+      },
+      {
+        "step": 240000,
+        "score": 183.0,
+        "lines": 10.0,
+        "steps": 21.0
+      },
+      {
+        "step": 260000,
+        "score": 274.0,
+        "lines": 15.0,
+        "steps": 28.0
+      },
+      {
+        "step": 280000,
+        "score": 280.0,
+        "lines": 15.0,
+        "steps": 30.0
+      },
+      {
+        "step": 300000,
+        "score": 186.0,
+        "lines": 11.0,
+        "steps": 22.0
+      },
+      {
+        "step": 320000,
+        "score": 288.0,
+        "lines": 14.0,
+        "steps": 26.0
+      },
+      {
+        "step": 340000,
+        "score": 565.0,
+        "lines": 31.0,
+        "steps": 55.0
+      },
+      {
+        "step": 360000,
+        "score": 652.0,
+        "lines": 37.0,
+        "steps": 64.0
+      },
+      {
+        "step": 380000,
+        "score": 352.0,
+        "lines": 19.0,
+        "steps": 34.0
+      },
+      {
+        "step": 400000,
+        "score": 368.0,
+        "lines": 20.0,
+        "steps": 36.0
+      },
+      {
+        "step": 420000,
+        "score": 517.0,
+        "lines": 28.0,
+        "steps": 49.0
+      },
+      {
+        "step": 440000,
+        "score": 517.0,
+        "lines": 28.0,
+        "steps": 49.0
+      },
+      {
+        "step": 460000,
+        "score": 636.0,
+        "lines": 36.0,
+        "steps": 62.0
+      },
+      {
+        "step": 480000,
+        "score": 636.0,
+        "lines": 36.0,
+        "steps": 62.0
+      },
+      {
+        "step": 500000,
+        "score": 636.0,
+        "lines": 36.0,
+        "steps": 62.0
+      },
+      {
+        "step": 520000,
+        "score": 559.0,
+        "lines": 31.0,
+        "steps": 53.0
+      },
+      {
+        "step": 540000,
+        "score": 636.0,
+        "lines": 36.0,
+        "steps": 62.0
+      },
+      {
+        "step": 560000,
+        "score": 636.0,
+        "lines": 36.0,
+        "steps": 62.0
+      },
+      {
+        "step": 580000,
+        "score": 636.0,
+        "lines": 36.0,
+        "steps": 62.0
+      },
+      {
+        "step": 600000,
+        "score": 382.0,
+        "lines": 19.0,
+        "steps": 34.0
+      },
+      {
+        "step": 620000,
+        "score": 636.0,
+        "lines": 36.0,
+        "steps": 62.0
+      },
+      {
+        "step": 640000,
+        "score": 382.0,
+        "lines": 19.0,
+        "steps": 34.0
+      },
+      {
+        "step": 660000,
+        "score": 636.0,
+        "lines": 36.0,
+        "steps": 62.0
+      },
+      {
+        "step": 680000,
+        "score": 636.0,
+        "lines": 36.0,
+        "steps": 62.0
+      },
+      {
+        "step": 700000,
+        "score": 427.0,
+        "lines": 22.0,
+        "steps": 39.0
+      },
+      {
+        "step": 720000,
+        "score": 636.0,
+        "lines": 36.0,
+        "steps": 62.0
+      },
+      {
+        "step": 740000,
+        "score": 611.0,
+        "lines": 33.0,
+        "steps": 57.0
+      },
+      {
+        "step": 760000,
+        "score": 611.0,
+        "lines": 33.0,
+        "steps": 57.0
+      },
+      {
+        "step": 780000,
+        "score": 611.0,
+        "lines": 33.0,
+        "steps": 57.0
+      },
+      {
+        "step": 800000,
+        "score": 611.0,
+        "lines": 33.0,
+        "steps": 57.0
+      },
+      {
+        "step": 820000,
+        "score": 601.0,
+        "lines": 33.0,
+        "steps": 57.0
+      },
+      {
+        "step": 840000,
+        "score": 601.0,
+        "lines": 33.0,
+        "steps": 57.0
+      },
+      {
+        "step": 860000,
+        "score": 611.0,
+        "lines": 33.0,
+        "steps": 57.0
+      },
+      {
+        "step": 880000,
+        "score": 611.0,
+        "lines": 33.0,
+        "steps": 57.0
+      },
+      {
+        "step": 900000,
+        "score": 611.0,
+        "lines": 33.0,
+        "steps": 57.0
+      },
+      {
+        "step": 920000,
+        "score": 611.0,
+        "lines": 33.0,
+        "steps": 57.0
+      },
+      {
+        "step": 940000,
+        "score": 611.0,
+        "lines": 33.0,
+        "steps": 57.0
+      },
+      {
+        "step": 960000,
+        "score": 714.0,
+        "lines": 40.0,
+        "steps": 68.0
+      },
+      {
+        "step": 980000,
+        "score": 714.0,
+        "lines": 40.0,
+        "steps": 68.0
+      },
+      {
+        "step": 1000000,
+        "score": 714.0,
+        "lines": 40.0,
+        "steps": 68.0
+      }
+    ]
+  }
+}

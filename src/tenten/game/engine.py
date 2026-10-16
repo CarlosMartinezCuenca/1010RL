@@ -1,6 +1,6 @@
 import numpy as np
 
-from tenten.pieces import PIECES
+from tenten.game.pieces import PIECES
 
 
 class Engine:

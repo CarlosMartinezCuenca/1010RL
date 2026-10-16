@@ -1,48 +1,31 @@
 """
-uv run python evaluate.py
+uv run python scripts/evaluate.py
 uv run mlflow ui --backend-store-uri sqlite:///mlflow.db      # http://127.0.0.1:5000
 """
 
 import mlflow
 import numpy as np
 
-from agents.baselines import GreedyAgent, RandomAgent, HeuristicAgent
-from tenten.env import TenTenEnv
-
-
-def play_games(agent, env, n_games, seed=0):
-    scores, lines, steps = [], [], []
-
-    for i in range(n_games):
-        obs, info = env.reset(seed=seed + i)
-        done = False
-
-        while not done:
-            action = agent.act(env, info)
-            obs, reward, terminated, truncated, info = env.step(action)
-            done = terminated or truncated
-
-        scores.append(info["score"])
-        lines.append(info["lines"])
-        steps.append(info["steps"])
-
-    return {"score": scores, "lines": lines, "steps": steps}
+from tenten.agents.baselines import GreedyAgent, HeuristicAgent, RandomAgent
+from tenten.evaluation import play_games
+from tenten.game.env import TenTenEnv
+from tenten.tracking import setup_mlflow
 
 
 def main():
     n_games = 100
+    seed = 0
     env = TenTenEnv()
 
-    mlflow.set_tracking_uri("sqlite:///mlflow.db")
-    mlflow.set_experiment("baselines")
+    setup_mlflow("baselines")
 
     for name, agent in [
-        ("random", RandomAgent(seed=0)),
-        ("greedy", GreedyAgent(seed=0)),
-        ("heuristic", HeuristicAgent(seed=0)),
+        ("random", RandomAgent(seed=seed)),
+        ("greedy", GreedyAgent(seed=seed)),
+        ("heuristic", HeuristicAgent(seed=seed)),
     ]:
         results = play_games(agent, env, n_games)
-        with mlflow.start_run(run_name=name):
+        with mlflow.start_run(run_name=f"{name}_seed{seed}"):
             mlflow.log_params(
                 {"agent": name, "n_games": n_games, "max_steps": env.max_steps}
             )

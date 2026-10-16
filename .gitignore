@@ -15,3 +15,9 @@ mlruns/
 
 # Models folder
 models/
+
+# Pytest
+.pytest_cache/
+
+# Ruff
+.ruff_cache/

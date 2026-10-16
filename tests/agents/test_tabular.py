@@ -1,5 +1,5 @@
-from agents.tabular import TabularQAgent
-from tenten.env import TenTenEnv
+from tenten.agents.tabular import TabularQAgent
+from tenten.game.env import TenTenEnv
 
 
 def make_env():

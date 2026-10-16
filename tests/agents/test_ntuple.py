@@ -1,8 +1,13 @@
 import numpy as np
 
-from agents.ntuple import NTupleAgent, NTupleNetwork, SearchAgent, place_everywhere
-from tenten.env import TenTenEnv
-from tenten.pieces import PIECES
+from tenten.agents.ntuple import (
+    NTupleAgent,
+    NTupleNetwork,
+    SearchAgent,
+    place_everywhere,
+)
+from tenten.game.env import TenTenEnv
+from tenten.game.pieces import PIECES
 
 DOT = list(PIECES).index("dot")
 

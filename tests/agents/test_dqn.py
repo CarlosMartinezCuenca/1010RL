@@ -1,7 +1,7 @@
 import numpy as np
 
-from agents.dqn import DQNAgent
-from tenten.env import TenTenEnv
+from tenten.agents.dqn import DQNAgent
+from tenten.game.env import TenTenEnv
 
 
 def make_agent(env):

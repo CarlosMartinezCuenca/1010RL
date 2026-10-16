@@ -1,7 +1,7 @@
 import numpy as np
 
-from tenten.engine import Engine
-from tenten.pieces import PIECES
+from tenten.game.engine import Engine
+from tenten.game.pieces import PIECES
 
 
 def empty_board(size=10):

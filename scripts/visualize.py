@@ -1,14 +1,13 @@
-import os
 import argparse
+import os
 
 import numpy as np  # noqa: E402
 import pygame  # noqa: E402
-
 from PIL import Image
 
-from agents.loading import NAMES, load_agent
-from tenten.env import TenTenEnv
-from tenten.pieces import PIECES
+from tenten.agents.registry import NAMES, load_agent
+from tenten.game.env import TenTenEnv
+from tenten.game.pieces import PIECES
 
 os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
 
@@ -123,7 +122,7 @@ def main():
         "--agent", default="heuristic", help=" | ".join(NAMES)
     )
     parser.add_argument(
-        "--model", default="models/ntuple/ntuple_seed0_last.npy", help="pesos del agente"
+        "--model", default="models/10x10_all/ntuple_seed0_best.npy", help="pesos del agente"
     )
     parser.add_argument("--search", action="store_true", help="n-tuplas con búsqueda")
     parser.add_argument("--seed", type=int, default=0)
