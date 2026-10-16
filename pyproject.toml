@@ -11,6 +11,8 @@ dependencies = [
     "gymnasium>=1.4.0",
     "mlflow>=3.17.1",
     "numpy>=2.2.6",
+    "pillow>=12.3.0",
+    "pygame>=2.6.1",
     "torch>=2.14.1",
 ]
 
