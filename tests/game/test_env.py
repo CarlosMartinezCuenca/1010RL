@@ -1,3 +1,5 @@
+"""Tests for the Gymnasium environment: actions, masks, rewards and game over."""
+
 import numpy as np
 
 from tenten.game.env import TenTenEnv
@@ -37,7 +39,7 @@ def test_step_clears_a_line_and_gives_reward():
     env.board[0:9] = True
     env.hand = [NAMES.index("dot"), NAMES.index("dot"), NAMES.index("dot")]
     obs, reward, terminated, truncated, info = env.step(9)
-    assert reward == 1 + 10  # 1 casilla + bonus de 1 línea
+    assert reward == 1 + 10  # 1 cell + bonus for 1 line
     assert not env.board.any()
     assert info["lines"] == 1
     assert info["score"] == 1 + 10
@@ -46,10 +48,10 @@ def test_step_clears_a_line_and_gives_reward():
 def test_used_slot_is_empty_and_masked():
     env = TenTenEnv()
     _, info = env.reset(seed=1)
-    a = int(np.flatnonzero(info["action_mask"][:100])[0])  # una jugada del hueco 0
+    a = int(np.flatnonzero(info["action_mask"][:100])[0])  # a move with slot 0
     _, _, _, _, info = env.step(a)
     assert env.hand[0] is None
-    assert not info["action_mask"][:100].any()  # ese hueco ya no se puede usar
+    assert not info["action_mask"][:100].any()  # that slot can no longer be used
 
 
 def test_new_hand_after_three_moves():
@@ -66,19 +68,18 @@ def test_invalid_action_ends_the_game():
     env.reset(seed=0)
     env.board[0] = True
     env.hand = [NAMES.index("dot"), None, None]
-    _, reward, terminated, _, _ = env.step(0)  # casilla ocupada
+    _, reward, terminated, _, _ = env.step(0)  # occupied cell
     assert terminated and reward == 0.0
     env.reset(seed=0)
     env.hand = [NAMES.index("dot"), None, None]
-    _, _, terminated, _, _ = env.step(100 + 5)  # hueco 1 vacío
+    _, _, terminated, _, _ = env.step(100 + 5)  # slot 1 is empty
     assert terminated
 
 
 def test_game_over_when_nothing_fits():
     env = TenTenEnv()
     env.reset(seed=0)
-    # Tablero lleno salvo la diagonal y la casilla (0,1): ninguna fila ni
-    # columna está completa, y no hay ningún hueco de 3x3.
+    # Full board except the diagonal and cell (0, 1): no full row or column, no 3x3 gap
     env.board[:] = True
     env.board[[i * 10 + i for i in range(10)]] = False
     env.board[1] = False
@@ -86,8 +87,8 @@ def test_game_over_when_nothing_fits():
     env.hand = [NAMES.index("dot"), sq3, sq3]
     _, _, terminated, truncated, info = env.step(
         1
-    )  # el punto en (0,1): no completa nada
-    assert terminated and not truncated  # los 3x3 no caben
+    )  # the dot at (0, 1) completes nothing
+    assert terminated and not truncated  # the 3x3 squares do not fit
     assert not info["action_mask"].any()
 
 

@@ -1,3 +1,5 @@
+"""Gymnasium environment for 1010!: place pieces from your hand, clear lines, score points."""
+
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
@@ -7,6 +9,8 @@ from tenten.game.pieces import PIECES
 
 
 class TenTenEnv(gym.Env):
+    """Action = slot * n + anchor (which hand piece, top-left cell). Reward = points of the move."""
+
     def __init__(
         self,
         size: int = 10,
@@ -37,12 +41,14 @@ class TenTenEnv(gym.Env):
         self.score = 0
 
     def _deal(self):
+        """Deals a new random hand."""
         n_pieces = len(self.engine.pieces)
         self.hand = [
             int(k) for k in self.np_random.integers(n_pieces, size=self.hand_size)
         ]
 
     def action_mask(self) -> np.ndarray:
+        """Boolean per action: True if it is legal."""
         mask = np.zeros(self.hand_size * self.n, dtype=bool)
         for slot, k in enumerate(self.hand):
             if k is None:
@@ -52,12 +58,14 @@ class TenTenEnv(gym.Env):
         return mask
 
     def _obs(self) -> np.ndarray:
-        empty = np.zeros(self.n, dtype=np.uint8)  # hueco vacío -> plano de ceros
+        """Board plane followed by one plane per hand slot with its piece."""
+        empty = np.zeros(self.n, dtype=np.uint8)  # used slot -> all-zero plane
         planes = [self.board.astype(np.uint8)]
         planes += [empty if k is None else self.engine.planes[k] for k in self.hand]
         return np.concatenate(planes)
 
     def _info(self, mask: np.ndarray) -> dict:
+        """Action mask and game stats."""
         return {
             "action_mask": mask,
             "steps": self.steps,
@@ -66,6 +74,7 @@ class TenTenEnv(gym.Env):
         }
 
     def reset(self, *, seed: int | None = None, options: dict | None = None):
+        """Starts a new game with an empty board and a fresh hand."""
         super().reset(seed=seed)
 
         self.board = np.zeros(self.n, dtype=bool)
@@ -77,6 +86,7 @@ class TenTenEnv(gym.Env):
         return self._obs(), self._info(self.action_mask())
 
     def step(self, action: int):
+        """Plays one move; an illegal one ends the game with reward 0."""
         slot, anchor = divmod(int(action), self.n)
 
         k = self.hand[slot]
@@ -98,6 +108,6 @@ class TenTenEnv(gym.Env):
         mask = self.action_mask()
         terminated = not mask.any()
         truncated = (not terminated) and self.steps >= self.max_steps
-        reward = float(points)  # recompensa = puntos de la jugada, la misma métrica que se evalúa
+        reward = float(points)  # same metric used for evaluation
 
         return self._obs(), reward, terminated, truncated, self._info(mask)

@@ -1,3 +1,5 @@
+"""Tests for the rules engine: placements, line clearing and scoring."""
+
 import numpy as np
 
 from tenten.game.engine import Engine

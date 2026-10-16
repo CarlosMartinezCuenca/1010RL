@@ -1,3 +1,5 @@
+"""Tests for the tabular Q-learning agent."""
+
 from tenten.agents.tabular import TabularQAgent
 from tenten.game.env import TenTenEnv
 

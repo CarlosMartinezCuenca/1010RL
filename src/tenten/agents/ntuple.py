@@ -1,11 +1,18 @@
+"""N-tuple network + TD(0) on afterstates (the board right after a move and its line clears).
+
+V(board) is the sum of one weight per tuple (a fixed group of cells), indexed by the
+pattern of those cells. The 8 rotations/reflections of a tuple share the same weights.
+"""
+
 import numpy as np
 
 from tenten.game.engine import Engine
 
-SHAPES = [(1, None), (None, 1), (2, 2), (3, 3), (2, 3), (3, 2)]
+SHAPES = [(1, None), (None, 1), (2, 2), (3, 3), (2, 3), (3, 2)]  # (height, width); None = whole board
 
 
 def symmetries(size):
+    """The 8 symmetries of the square as (row, col) -> (row, col) maps."""
     m = size - 1
     return [
         lambda r, c: (r, c),
@@ -20,6 +27,8 @@ def symmetries(size):
 
 
 class NTupleNetwork:
+    """Value function V(board) as a sum of lookup tables."""
+
     def __init__(self, size=10):
         self.size = size
         tuples = []
@@ -35,7 +44,7 @@ class NTupleNetwork:
                         (row + i) * size + (col + j) for i in range(h) for j in range(w)
                     ]
                     if frozenset(cells) in seen:
-                        continue
+                        continue  # it is a rotation/reflection of a tuple that already has a table
 
                     table = len(table_sizes)
                     table_sizes.append(len(cells))
@@ -51,9 +60,11 @@ class NTupleNetwork:
                     for image in images:
                         tuples.append((image, table))
 
+        # A table of k cells has 2^k weights; all tables live in one vector, one after another
         offsets = np.cumsum([0] + [2**k for k in table_sizes])
         self.weights = np.zeros(offsets[-1])
 
+        # powers[cell, t] = 2^j if cell is the j-th cell of tuple t, so the pattern index is a matmul
         self.powers = np.zeros((size * size, len(tuples)), dtype=np.float32)
         for t, (cells, table) in enumerate(tuples):
             self.powers[list(cells), t] = 2.0 ** np.arange(len(cells))
@@ -61,20 +72,24 @@ class NTupleNetwork:
         self.n_tuples = len(tuples)
 
     def indices(self, boards):
-        patterns = boards.astype(np.float32) @ self.powers
+        """(B, n) boards -> (B, n_tuples) indices of the active weight of each tuple."""
+        patterns = boards.astype(np.float32) @ self.powers  # exact: at most 2^10 - 1
         return patterns.astype(np.int64) + self.starts
 
     def value(self, boards):
+        """V of a batch of boards."""
         return self.weights[self.indices(boards)].sum(axis=1)
 
     def update(self, board, target, alpha):
+        """Moves V(board) a fraction alpha towards target; returns the TD error."""
         idx = self.indices(board[None, :])[0]
         error = target - self.weights[idx].sum()
-        np.add.at(self.weights, idx, alpha * error / len(idx))
+        np.add.at(self.weights, idx, alpha * error / len(idx))  # add.at: an index can repeat
         return error
 
 
 def place_everywhere(env, board, piece):
+    """Every legal placement of piece: (anchors, resulting boards after clearing, lines)."""
     engine = env.engine
     ok = engine.valid(board, piece)
     boards, lines = engine.clear(board | engine.masks[piece][ok])
@@ -82,12 +97,15 @@ def place_everywhere(env, board, piece):
 
 
 def fits_somewhere(env, boards, piece):
+    """For each board, whether piece fits anywhere."""
     masks = env.engine.masks[piece].astype(np.float32)
     overlaps = boards.astype(np.float32) @ masks.T
     return (overlaps == 0).any(axis=1)
 
 
 class NTupleAgent:
+    """Picks the move maximising r + gamma * V(afterstate)."""
+
     def __init__(
         self,
         size=10,
@@ -106,6 +124,7 @@ class NTupleAgent:
         self.rng = np.random.default_rng(seed)
 
     def candidates(self, env, board=None, hand=None):
+        """All legal moves with their slot, afterstate, reward and r + gamma * V."""
         board = env.board if board is None else board
         hand = env.hand if hand is None else hand
 
@@ -127,10 +146,11 @@ class NTupleAgent:
         rewards = np.concatenate(rewards)
 
         values = self.net.value(afterstates)
+        # If none of the remaining hand pieces fits, the game is certainly lost
         for slot in np.unique(slots):
             rest = [k for s, k in enumerate(hand) if k is not None and s != slot]
             if not rest:
-                continue
+                continue  # last piece: a new random hand comes, nothing is certain
             this_slot = slots == slot
             any_fits = np.zeros(this_slot.sum(), dtype=bool)
             for k in rest:
@@ -141,6 +161,7 @@ class NTupleAgent:
         return actions, slots, afterstates, rewards, scores
 
     def choose(self, env, epsilon=0.0):
+        """For training: epsilon-greedy (action, afterstate, reward)."""
         actions, _, afterstates, rewards, scores = self.candidates(env)
         if self.rng.random() < epsilon:
             i = self.rng.integers(len(actions))
@@ -149,35 +170,43 @@ class NTupleAgent:
         return int(actions[i]), afterstates[i], float(rewards[i])
 
     def act(self, env, info):
+        """Greedy move, same interface as the baselines."""
         actions, _, _, _, scores = self.candidates(env)
         return int(actions[np.argmax(scores)])
 
     def learn(self, afterstate, target):
+        """TD update of one afterstate; returns the error."""
         return self.net.update(afterstate, target, self.alpha)
 
     def value(self, afterstate):
+        """V of a single afterstate."""
         return float(self.net.value(afterstate[None, :])[0])
 
     def save(self, path):
+        """Saves the weights (.npy)."""
         np.save(path, self.net.weights)
 
     def load(self, path):
+        """Loads the weights (.npy)."""
         self.net.weights = np.load(path)
 
 
 class SearchAgent:
+    """One-step lookahead with a trained NTupleAgent, using the known pieces left in hand."""
+
     def __init__(self, agent, top_k=12):
         self.agent = agent
         self.top_k = top_k
 
     def act(self, env, info):
+        """Re-scores the top_k moves with the best follow-up move of the remaining pieces."""
         a = self.agent
         actions, slots, afterstates, rewards, scores = a.candidates(env)
         best_action, best_score = actions[np.argmax(scores)], -np.inf
         for i in np.argsort(-scores)[: self.top_k]:
             rest = [k if s != slots[i] else None for s, k in enumerate(env.hand)]
             if all(k is None for k in rest):
-                score = scores[i]
+                score = scores[i]  # last piece: the next hand is random, no lookahead
             else:
                 *_, next_scores = a.candidates(env, board=afterstates[i], hand=rest)
                 best_next = next_scores.max() if len(next_scores) else a.loss_penalty

@@ -1,17 +1,25 @@
+"""Watches an agent play in a window (or saves a GIF).
+
+uv run python scripts/visualize.py --agent ntuple --search
+uv run python scripts/visualize.py --agent dqn --model models/5x5_small_L/dqn_seed0_best.pt --size 5 --pieces small_L --hand-size 1 --max-steps 200
+uv run python scripts/visualize.py --agent heuristic --gif game.gif
+Keys: space pause, right arrow step, +/- speed, R new game, Q quit.
+"""
+
 import argparse
 import os
 
+os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")  # must be set before importing pygame
+
 import numpy as np  # noqa: E402
 import pygame  # noqa: E402
-from PIL import Image
+from PIL import Image  # noqa: E402
 
-from tenten.agents.registry import NAMES, load_agent
-from tenten.game.env import TenTenEnv
-from tenten.game.pieces import PIECES
+from tenten.agents.registry import NAMES, load_agent  # noqa: E402
+from tenten.game.env import TenTenEnv  # noqa: E402
+from tenten.game.pieces import PIECES  # noqa: E402
 
-os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
-
-# (R, G, B)
+# Colours as (R, G, B)
 BACKGROUND = (246, 246, 243)
 EMPTY = (226, 226, 220)
 FILLED = (42, 120, 214)
@@ -23,14 +31,16 @@ MUTED = (107, 114, 128)
 CELL, GAP, MARGIN = 44, 3, 28
 MINI = 16
 PANEL_W = 320
-PANEL_H = 380  # alto mínimo para que el panel de la derecha quepa con tableros pequeños
+PANEL_H = 380  # minimum height so the side panel fits next to small boards
 
 
 def area_height(env):
+    """Height of the drawing area: the board or the side panel, whichever is taller."""
     return max(env.size * (CELL + GAP), PANEL_H)
 
 
 def preview(env, action):
+    """Cells of the move about to be played, lines it would clear and its hand slot."""
     slot, anchor = divmod(action, env.n)
     cells = env.engine.mask_at(env.hand[slot], anchor)
     placed = (env.board | cells).reshape(env.size, env.size)
@@ -43,6 +53,7 @@ def preview(env, action):
 
 
 def draw(screen, fonts, env, info, name, action, game_over, paused, speed):
+    """Draws the board (next move in orange, lines to clear in yellow) and the side panel."""
     big, normal, small = fonts
     screen.fill(BACKGROUND)
 
@@ -80,16 +91,16 @@ def draw(screen, fonts, env, info, name, action, game_over, paused, speed):
     y += 50
 
     for label, value in [
-        ("Puntos", info["score"]),
-        ("Líneas", info["lines"]),
-        ("Piezas colocadas", info["steps"]),
+        ("Score", info["score"]),
+        ("Lines", info["lines"]),
+        ("Pieces placed", info["steps"]),
     ]:
         screen.blit(normal.render(label, True, MUTED), (x, y))
         screen.blit(normal.render(str(value), True, TEXT), (x + 200, y))
         y += 28
 
     y += 20
-    screen.blit(normal.render("Mano", True, MUTED), (x, y))
+    screen.blit(normal.render("Hand", True, MUTED), (x, y))
     y += 30
     chosen_slot = preview(env, action)[2] if action is not None else None
     for slot, piece in enumerate(env.hand):
@@ -104,38 +115,39 @@ def draw(screen, fonts, env, info, name, action, game_over, paused, speed):
         x += 5 * (MINI + 2) + 12
 
     x = MARGIN * 2 + board_px
-    state = "PAUSA" if paused else f"velocidad x{speed:g}"
+    state = "PAUSED" if paused else f"speed x{speed:g}"
     bottom = top + area_height(env)
     screen.blit(small.render(state, True, TEXT), (x, bottom - 60))
     screen.blit(
-        small.render("espacio pausa · → paso · +/- velocidad", True, MUTED),
+        small.render("space pause · → step · +/- speed", True, MUTED),
         (x, bottom - 40),
     )
     screen.blit(
-        small.render("R nueva partida · Q salir", True, MUTED), (x, bottom - 20)
+        small.render("R new game · Q quit", True, MUTED), (x, bottom - 20)
     )
 
 
 def main():
+    """Each tick alternates: choose a move (shown as a preview), then play it."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--agent", default="heuristic", help=" | ".join(NAMES)
     )
     parser.add_argument(
-        "--model", default="models/10x10_all/ntuple_seed0_best.npy", help="pesos del agente"
+        "--model", default="models/10x10_all/ntuple_seed0_best.npy", help="agent weights"
     )
-    parser.add_argument("--search", action="store_true", help="n-tuplas con búsqueda")
+    parser.add_argument("--search", action="store_true", help="n-tuples with one-step search")
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--size", type=int, default=10, help="lado del tablero")
-    parser.add_argument("--pieces", nargs="+", default=list(PIECES), help="piezas posibles")
+    parser.add_argument("--size", type=int, default=10, help="board side")
+    parser.add_argument("--pieces", nargs="+", default=list(PIECES), help="pieces that can be dealt")
     parser.add_argument("--hand-size", type=int, default=3)
     parser.add_argument("--max-steps", type=int, default=1000)
     parser.add_argument("--speed", type=float, default=1.0)
     parser.add_argument(
-        "--gif", default=None, help="en vez de abrir ventana, guarda un GIF"
+        "--gif", default=None, help="save a GIF instead of opening a window"
     )
     parser.add_argument(
-        "--gif-moves", type=int, default=40, help="jugadas que salen en el GIF"
+        "--gif-moves", type=int, default=40, help="moves shown in the GIF"
     )
     args = parser.parse_args()
 
@@ -155,7 +167,7 @@ def main():
     height = MARGIN * 2 + 40 + area_height(env)
 
     if args.gif:
-        os.environ["SDL_VIDEODRIVER"] = "dummy"
+        os.environ["SDL_VIDEODRIVER"] = "dummy"  # render off-screen
 
     pygame.display.init()
     pygame.font.init()
@@ -242,7 +254,7 @@ def main():
             duration=durations,
             loop=0,
         )
-        print(f"GIF guardado en {args.gif} ({len(images)} fotogramas)")
+        print(f"GIF saved to {args.gif} ({len(images)} frames)")
 
 
 if __name__ == "__main__":

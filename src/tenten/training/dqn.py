@@ -1,3 +1,5 @@
+"""DQN training loop."""
+
 import os
 
 import mlflow
@@ -8,7 +10,7 @@ from tenten.agents.dqn import DQNAgent
 from tenten.evaluation import play_games
 from tenten.tracking import setup_mlflow
 
-CONFIG = {
+CONFIG = {  # defaults for the full 10x10 game
     "total_steps": 300_000,
     "hidden": 256,
     "lr": 1e-3,
@@ -17,7 +19,7 @@ CONFIG = {
     "batch_size": 128,
     "learning_starts": 5_000,
     "train_freq": 4,
-    "reward_scale": 0.1,
+    "reward_scale": 0.1,  # keeps Q-values small for the network
     "target_update": 1_000,
     "eps_start": 1.0,
     "eps_end": 0.05,
@@ -28,16 +30,16 @@ CONFIG = {
 }
 
 
-
 def epsilon_at(step, c):
+    """Linear decay from eps_start to eps_end, then constant."""
     frac = min(1.0, step / c["eps_decay_steps"])
     return c["eps_start"] + frac * (c["eps_end"] - c["eps_start"])
 
 
 def train(c, make_env, experiment):
-    """Entrena en el entorno de make_env y lo registra en mlruns/<experiment>.
-    Devuelve el historial de evaluaciones y la ruta del mejor modelo."""
-    torch.set_num_threads(1)  # con una red tan pequeña, más hilos no compensan
+    """Trains on make_env() and logs to MLflow experiment `experiment`.
+    Returns the evaluation history and the path of the best checkpoint."""
+    torch.set_num_threads(1)  # the network is too small to benefit from more threads
     env = make_env()
     eval_env = make_env()
     obs_size = env.observation_space.shape[0]
@@ -72,6 +74,7 @@ def train(c, make_env, experiment):
             next_obs, reward, terminated, truncated, info = env.step(action)
             reward *= c["reward_scale"]
 
+            # Only `terminated` is stored: a truncated game still has a future to bootstrap from
             agent.remember(
                 obs, action, reward, next_obs, info["action_mask"], terminated
             )
@@ -101,7 +104,7 @@ def train(c, make_env, experiment):
                 losses = []
                 history.append({"step": step, **{k: float(np.mean(v)) for k, v in results.items()}})
                 print(
-                    f"paso {step:>7} | puntos {score:7.1f} | epsilon {eps:.2f}",
+                    f"step {step:>7} | score {score:7.1f} | epsilon {eps:.2f}",
                     flush=True,
                 )
 
@@ -110,6 +113,6 @@ def train(c, make_env, experiment):
                     agent.save(model_path)
 
         mlflow.log_artifact(model_path)
-        print(f"Mejor evaluación: {best_score:.1f} puntos")
+        print(f"Best evaluation: {best_score:.1f} points")
     return history, model_path
 

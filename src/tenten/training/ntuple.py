@@ -1,3 +1,5 @@
+"""N-tuple network training loop: TD(0) on afterstates."""
+
 import os
 
 import mlflow
@@ -7,12 +9,12 @@ from tenten.agents.ntuple import NTupleAgent, SearchAgent
 from tenten.evaluation import play_games
 from tenten.tracking import setup_mlflow
 
-CONFIG = {
+CONFIG = {  # defaults for the full 10x10 game
     "total_steps": 4_500_000,
-    "alpha_phases": [(0, 0.1), (2_000_000, 0.025), (3_500_000, 0.006)],
+    "alpha_phases": [(0, 0.1), (2_000_000, 0.025), (3_500_000, 0.006)],  # (from step, alpha)
     "gamma": 0.95,
     "reward_scale": 0.1,
-    "loss_penalty": 0.0,
+    "loss_penalty": 0.0,  # value of a lost game; < 0 is extra reward shaping
     "eps_start": 0.05,
     "eps_end": 0.0,
     "eps_decay_steps": 50_000,
@@ -23,6 +25,7 @@ CONFIG = {
 
 
 def alpha_at(step, c):
+    """Learning rate of the current phase."""
     alpha = c["alpha_phases"][0][1]
     for start, value in c["alpha_phases"]:
         if step >= start:
@@ -31,13 +34,14 @@ def alpha_at(step, c):
 
 
 def epsilon_at(step, c):
+    """Linear decay from eps_start to eps_end, then constant."""
     frac = max(0.0, 1 - step / c["eps_decay_steps"])
     return c["eps_end"] + frac * (c["eps_start"] - c["eps_end"])
 
 
 def train(c, make_env, experiment):
-    """Entrena en el entorno de make_env y lo registra en mlruns/<experiment>.
-    Devuelve el historial de evaluaciones y la ruta del mejor modelo."""
+    """Trains on make_env() and logs to MLflow experiment `experiment`.
+    Returns the evaluation history and the path of the best checkpoint."""
     env = make_env()
     eval_env = make_env()
     agent = NTupleAgent(
@@ -66,6 +70,7 @@ def train(c, make_env, experiment):
 
             action, afterstate, reward = agent.choose(env, epsilon_at(step, c))
 
+            # The previous afterstate is worth this move's reward plus the value of where it leads
             if previous is not None:
                 target = reward + agent.gamma * agent.value(afterstate)
                 errors.append(abs(agent.learn(previous, target)))
@@ -95,7 +100,7 @@ def train(c, make_env, experiment):
                 errors = []
                 history.append({"step": step, **{k: float(np.mean(v)) for k, v in results.items()}})
                 print(
-                    f"paso {step:>8} | puntos {score:8.1f} | alpha {agent.alpha}",
+                    f"step {step:>8} | score {score:8.1f} | alpha {agent.alpha}",
                     flush=True,
                 )
                 agent.save(last_path)
@@ -108,6 +113,6 @@ def train(c, make_env, experiment):
             mlflow.log_metric(f"{name}_score", float(np.mean(results["score"])))
         mlflow.log_artifact(last_path)
         mlflow.log_artifact(best_path)
-        print(f"Mejor evaluación: {best_score:.1f} puntos")
+        print(f"Best evaluation: {best_score:.1f} points")
     return history, best_path
 

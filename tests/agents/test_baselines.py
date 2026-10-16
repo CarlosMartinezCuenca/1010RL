@@ -1,3 +1,5 @@
+"""Tests for the baseline agents."""
+
 import numpy as np
 
 from tenten.agents.baselines import GreedyAgent, HeuristicAgent, RandomAgent
@@ -28,7 +30,7 @@ def test_greedy_takes_the_line():
     env.hand = [DOT, None, None]
     info = {"action_mask": env.action_mask()}
     action = GreedyAgent(seed=0).act(env, info)
-    assert action == 0 * env.n + 9  # slot 0, casilla 9
+    assert action == 0 * env.n + 9  # slot 0, cell 9
 
 
 def test_greedy_beats_random():

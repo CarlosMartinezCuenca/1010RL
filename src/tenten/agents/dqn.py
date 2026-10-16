@@ -1,3 +1,5 @@
+"""Double DQN with action masking, replay buffer and target network."""
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -5,6 +7,7 @@ import torch.nn.functional as F
 
 
 class QNetwork(nn.Module):
+    """MLP: observation -> one Q-value per action."""
 
     def __init__(self, obs_size, n_actions, hidden=256):
         super().__init__()
@@ -21,12 +24,14 @@ class QNetwork(nn.Module):
 
 
 class ReplayBuffer:
+    """Circular buffer of transitions stored as NumPy arrays."""
+
     def __init__(self, capacity, obs_size, n_actions):
         self.capacity = capacity
         self.size = 0
         self.pos = 0
 
-        # Las observaciones son 0/1: uint8 ocupa 4 veces menos que float32
+        # Observations are 0/1: uint8 takes 4x less memory than float32
         self.obs = np.zeros((capacity, obs_size), dtype=np.uint8)
         self.actions = np.zeros(capacity, dtype=np.int64)
         self.rewards = np.zeros(capacity, dtype=np.float32)
@@ -35,6 +40,7 @@ class ReplayBuffer:
         self.dones = np.zeros(capacity, dtype=np.float32)
 
     def add(self, obs, action, reward, next_obs, next_mask, done):
+        """Stores a transition, overwriting the oldest one when full."""
         i = self.pos
 
         self.obs[i] = obs
@@ -48,6 +54,7 @@ class ReplayBuffer:
         self.size = min(self.size + 1, self.capacity)
 
     def sample(self, batch_size, rng):
+        """Random batch of transitions as tensors."""
         idx = rng.integers(0, self.size, size=batch_size)
         return (
             torch.as_tensor(self.obs[idx], dtype=torch.float32),
@@ -60,6 +67,8 @@ class ReplayBuffer:
 
 
 class DQNAgent:
+    """Learns Q(state, action) with a neural network."""
+
     def __init__(
         self,
         obs_size,
@@ -85,6 +94,7 @@ class DQNAgent:
         self.buffer = ReplayBuffer(buffer_size, obs_size, n_actions)
 
     def choose(self, obs, mask, epsilon=0.0):
+        """Epsilon-greedy over legal actions only."""
         if self.rng.random() < epsilon:
             return int(self.rng.choice(np.flatnonzero(mask)))
 
@@ -96,24 +106,28 @@ class DQNAgent:
         return int(np.argmax(q_values))
 
     def act(self, env, info):
+        """Greedy move, same interface as the baselines."""
         return self.choose(env._obs(), info["action_mask"], epsilon=0.0)
 
     def remember(self, obs, action, reward, next_obs, next_mask, done):
+        """Adds a transition to the replay buffer."""
         self.buffer.add(obs, action, reward, next_obs, next_mask, done)
 
     def learn(self):
+        """One gradient step on a random batch; returns the loss."""
         obs, actions, rewards, next_obs, next_masks, dones = self.buffer.sample(
             self.batch_size, self.rng
         )
 
-        q_sa = self.q(obs).gather(1, actions.unsqueeze(1)).squeeze(1)
+        q_sa = self.q(obs).gather(1, actions.unsqueeze(1)).squeeze(1)  # Q of the actions taken
 
         with torch.no_grad():
+            # Double DQN: the online net picks the best legal next action, the target net rates it
             next_q_online = self.q(next_obs).masked_fill(~next_masks, -1e9)
             best_next = next_q_online.argmax(dim=1, keepdim=True)
 
             next_q = self.q_target(next_obs).gather(1, best_next).squeeze(1)
-            target = rewards + self.gamma * next_q * (1 - dones)
+            target = rewards + self.gamma * next_q * (1 - dones)  # no future after game over
 
         loss = F.smooth_l1_loss(q_sa, target)
         self.optimizer.zero_grad()
@@ -125,11 +139,14 @@ class DQNAgent:
         return loss.item()
 
     def update_target(self):
+        """Copies the online weights into the target network."""
         self.q_target.load_state_dict(self.q.state_dict())
 
     def save(self, path):
+        """Saves the network weights."""
         torch.save(self.q.state_dict(), path)
 
     def load(self, path):
+        """Loads the network weights."""
         self.q.load_state_dict(torch.load(path))
         self.update_target()

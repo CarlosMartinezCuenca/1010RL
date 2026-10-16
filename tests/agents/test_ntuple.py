@@ -1,3 +1,5 @@
+"""Tests for the n-tuple network and its agents."""
+
 import numpy as np
 
 from tenten.agents.ntuple import (
@@ -61,7 +63,7 @@ def test_agents_only_pick_valid_actions():
 
 
 def test_simulated_move_matches_the_environment():
-    # El agente simula cada jugada: su afterstate y su recompensa deben ser los reales
+    # The agent simulates each move: its afterstate and reward must match the real ones
     env = TenTenEnv()
     agent = NTupleAgent()
     obs, info = env.reset(seed=0)

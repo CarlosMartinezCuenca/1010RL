@@ -1,9 +1,9 @@
-"""
-Compara los agentes que aprenden con las baselines, con el mismo presupuesto de pasos.
+"""Compares the learning agents with the baselines under the same step budget.
+Writes figures and summary.json to results/<setup>/ and logs everything to MLflow.
 
 uv run python scripts/experiment.py --setup 5x5_small_L
 uv run python scripts/experiment.py --setup 10x10_all
-uv run python scripts/experiment.py --setup 10x10_all --only ntuple    # reentrena solo ese modelo
+uv run python scripts/experiment.py --setup 10x10_all --only ntuple    # retrain only that model
 uv run mlflow ui --backend-store-uri sqlite:///mlflow.db      # http://127.0.0.1:5000
 """
 
@@ -25,18 +25,18 @@ from tenten.training import ntuple as train_ntuple
 from tenten.training import tabular as train_tabular
 
 SEED = 0
-FINAL_SEED = 20_000  # todas las evaluaciones finales juegan las mismas partidas
+FINAL_SEED = 20_000  # every agent's final evaluation plays the same games
 BASELINES = ("heuristic", "greedy", "random")
 TRAINERS = {"tabular": train_tabular, "dqn": train_dqn, "ntuple": train_ntuple}
 
 
 def phases(total):
-    """Las fases de alpha de las n-tuplas, escaladas al presupuesto."""
+    """N-tuple alpha phases scaled to the step budget."""
     return [(0, 0.1), (total * 4 // 9, 0.025), (total * 7 // 9, 0.006)]
 
 
 SETUPS = {
-    # Una sola pieza: el juego es determinista, así que todos necesitan explorar bastante
+    # One piece: the game is deterministic, so every agent needs plenty of exploration
     "5x5_small_L": {
         "env": {
             "size": 5,
@@ -65,7 +65,7 @@ SETUPS = {
         },
         "extra": [],
     },
-    # El juego completo: el azar de las piezas ya obliga a ver tableros nuevos
+    # Full game: random pieces already force the agents to see new boards
     "10x10_all": {
         "env": {
             "size": 10,
@@ -81,18 +81,20 @@ SETUPS = {
             "dqn": {"eps_decay_steps": 333_333},
             "ntuple": {"alpha_phases": phases(1_000_000)},
         },
-        "extra": ["ntuple_search"],  # n-tuplas + búsqueda, solo en la evaluación final
+        "extra": ["ntuple_search"],  # n-tuples + search, final evaluation only
     },
 }
 
+
 def main():
+    """Trains the agents of --setup, evaluates them against the baselines and saves the figures."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--setup", choices=list(SETUPS), default="5x5_small_L")
     parser.add_argument(
         "--only",
         nargs="+",
         choices=list(TRAINERS),
-        help="reentrena solo estos modelos y reutiliza el resto de summary.json",
+        help="retrain only these models and reuse the rest from summary.json",
     )
     args = parser.parse_args()
 
@@ -139,13 +141,13 @@ def main():
             configs[name], make_env, args.setup
         )
 
-    # Evaluación final: el mejor modelo de cada agente en las mismas partidas que las baselines
+    # Final evaluation: each agent's best checkpoint on the same games as the baselines
     env = make_env()
     final = dict(baselines)
-    capped = {}  # % de partidas que llegan a max_steps (el tope, no una derrota)
-    players = {**models, **{extra: models["ntuple"] for extra in setup["extra"]}}
+    capped = {}  # % of games that reach max_steps (the cap, not a loss)
+    players = {**models, **{extra: models["ntuple"] for extra in setup["extra"]}}  # search reuses the n-tuple weights
     for name, path in players.items():
-        print(f"Evaluación final: {NAMES[name]}", flush=True)
+        print(f"Final evaluation: {NAMES[name]}", flush=True)
         agent = load_agent(
             name, env, path, hidden=train_dqn.CONFIG["hidden"], seed=SEED
         )
@@ -159,8 +161,8 @@ def main():
     plot_curves(
         histories,
         "score",
-        "Puntuación durante el entrenamiento",
-        "Puntos por partida",
+        "Score during training",
+        "Points per game",
         f"{results_dir}/learning_curves.png",
         references,
         total,
@@ -168,10 +170,10 @@ def main():
     plot_curves(
         histories,
         "steps",
-        "Supervivencia durante el entrenamiento",
-        "Piezas colocadas",
+        "Survival during training",
+        "Pieces placed",
         f"{results_dir}/survival.png",
-        {"Máximo": setup["env"]["max_steps"]},
+        {"Max": setup["env"]["max_steps"]},
         total,
     )
     plot_final(final, setup["final_games"], f"{results_dir}/final_comparison.png")
@@ -193,11 +195,11 @@ def main():
         mlflow.log_metrics({f"final_score_{n}": s for n, s in final.items()})
         mlflow.log_artifacts(results_dir)
 
-    print("\nPuntuación final:")
+    print("\nFinal score:")
     for name in sorted(final, key=final.get, reverse=True):
-        tope = f"  ({capped[name]:.0f}% llegan al tope)" if name in capped else ""
-        print(f"  {NAMES[name]:<20} {final[name]:7.1f}{tope}")
-    print(f"Mejor: {NAMES[best]} -> {players[best]}")
+        cap = f"  ({capped[name]:.0f}% reach the cap)" if name in capped else ""
+        print(f"  {NAMES[name]:<20} {final[name]:7.1f}{cap}")
+    print(f"Best: {NAMES[best]} -> {players[best]}")
 
 
 if __name__ == "__main__":

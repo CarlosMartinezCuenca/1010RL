@@ -1,12 +1,14 @@
+"""Experiment figures (saved as PNG)."""
+
 import matplotlib
 
-matplotlib.use("Agg")
+matplotlib.use("Agg")  # no window needed, just files
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
 from tenten.agents.registry import NAMES  # noqa: E402
 
-# Paleta de referencia validada y tinta neutra para las baselines
+# Colour-blind safe palette for the learning agents; baselines are drawn in neutral grey
 COLORS = {
     "tabular": "#2a78d6",
     "dqn": "#eb6834",
@@ -17,9 +19,10 @@ SURFACE, INK, INK_2, MUTED, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#8a8984", "
 
 
 def style(ax, title, ylabel):
+    """Shared look of the line charts."""
     ax.set_facecolor(SURFACE)
     ax.set_title(title, loc="left", color=INK, fontsize=13, fontweight="bold", pad=28)
-    ax.set_xlabel("Pasos de entrenamiento", color=INK_2)
+    ax.set_xlabel("Training steps", color=INK_2)
     ax.set_ylabel(ylabel, color=INK_2)
     ax.grid(axis="y", color=GRID, linewidth=0.8)
     ax.set_axisbelow(True)
@@ -30,7 +33,7 @@ def style(ax, title, ylabel):
 
 
 def spread(ys, gap):
-    """Separa verticalmente etiquetas que quedarían una encima de otra."""
+    """Pushes labels apart vertically so they do not overlap."""
     order = np.argsort(ys)
     out = np.array(ys, dtype=float)
     for a, b in zip(order, order[1:]):
@@ -39,6 +42,7 @@ def spread(ys, gap):
 
 
 def plot_curves(histories, metric, title, ylabel, path, references, total_steps):
+    """One line per agent of `metric` over training, with baselines as dashed lines."""
     fig, ax = plt.subplots(figsize=(10, 5.5), facecolor=SURFACE)
     style(ax, title, ylabel)
 
@@ -58,7 +62,7 @@ def plot_curves(histories, metric, title, ylabel, path, references, total_steps)
     ax.set_ylim(bottom=0)
     gap = 0.045 * ax.get_ylim()[1]
 
-    # Baselines en una sola etiqueta sobre la más alta; modelos al final de su línea
+    # Baselines share one label above the highest one; agents are labelled at the end of their line
     text = " · ".join(f"{label} {value:.0f}" for label, value in references.items())
     ax.annotate(
         text,
@@ -93,11 +97,12 @@ def plot_curves(histories, metric, title, ylabel, path, references, total_steps)
 
 
 def plot_final(scores, games, path):
+    """Horizontal bars with the final mean score of every agent."""
     order = sorted(scores, key=scores.get)
     fig, ax = plt.subplots(figsize=(9, 0.6 * len(order) + 1.2), facecolor=SURFACE)
     ax.set_facecolor(SURFACE)
     ax.set_title(
-        f"Puntuación media en {games} partidas nuevas (mejor modelo de cada uno)",
+        f"Mean score over {games} new games (best checkpoint of each agent)",
         loc="left",
         color=INK,
         fontsize=13,
@@ -124,7 +129,7 @@ def plot_final(scores, games, path):
     for side in ("top", "right", "bottom"):
         ax.spines[side].set_visible(False)
     ax.spines["left"].set_color(GRID)
-    ax.set_xlabel("Puntos", color=INK_2)
+    ax.set_xlabel("Points", color=INK_2)
     fig.tight_layout()
     fig.savefig(path, dpi=150, facecolor=SURFACE)
     plt.close(fig)
