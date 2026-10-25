@@ -28,14 +28,20 @@ Full game: 10×10 board, all 19 pieces, hand of 3, at most 1000 pieces per game.
   <img src="results/10x10_all/final_comparison.png" alt="Mean score of each agent on the 10x10 game" width="700">
 </p>
 
-| Agent                 | Mean score |
-| --------------------- | ---------- |
-| **N-tuples + search** | **8542**   |
-| N-tuples              | 3418       |
-| Heuristic             | 1109       |
-| Greedy                | 120        |
-| DQN                   | 98         |
-| Random                | 79         |
+| Agent                 | Mean score | Games that reach the 1000-piece cap |
+| --------------------- | ---------: | ----------------------------------: |
+| **N-tuples + search** |   **8542** |                             **90%** |
+| N-tuples              |       3418 |                                 14% |
+| Heuristic             |       1109 |                                   – |
+| Greedy                |        120 |                                   – |
+| DQN                   |         98 |                                  0% |
+| Random                |         79 |                                   – |
+
+_– : not measured for the baselines._
+
+**N-tuples + search survives the whole game in 90% of the games**, so its mean score is a
+lower bound: the cap stops the game, not the agent. Even so, it scores 7.7× the
+hand-crafted heuristic.
 
 The n-tuple network generalises across boards it has never seen, while the DQN does not learn in this setting. On a small deterministic version (5×5, one piece) the ranking flips and the DQN wins, since it can memorise a sequence that never loses. All figures are in [`results/`](results/).
 
@@ -85,6 +91,10 @@ approximations that saliency methods need for deep networks.
 **Per-cell contribution map.** Each tuple's active weight is shared equally among its
 cells; summing per cell gives a 10×10 map whose total is exactly V(board). Blue cells
 raise the value of the board, red cells lower it.
+
+_Note:_ the decomposition of V into tuple weights is exact; splitting each weight equally
+among the cells of its tuple is a convention for drawing the map (other splits would also
+add up to V), so the map is exact in total but one of several valid per-cell attributions.
 
 **Contrastive explanation.** The agent scores each move as `reward + γ·V(afterstate)`.
 Comparing the chosen move with the runner-up, the score gap splits exactly into

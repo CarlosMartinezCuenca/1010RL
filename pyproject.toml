@@ -1,7 +1,7 @@
 [project]
-name = "1010-3"
-version = "0.1.0"
-description = "Add your description here"
+name = "tenten-rl"
+version = "1.2.0"
+description = "Reinforcement learning agents for the puzzle game 1010!, with exact explanations of the learned value function."
 readme = "README.md"
 authors = [
     { name = "CarlosMartinezCuenca", email = "carlos.martinez.cuenca04@gmail.com" }
