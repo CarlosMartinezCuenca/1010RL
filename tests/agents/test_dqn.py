@@ -1,3 +1,5 @@
+"""Tests for the DQN agent."""
+
 import numpy as np
 
 from tenten.agents.dqn import DQNAgent

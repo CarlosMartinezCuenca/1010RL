@@ -1,3 +1,5 @@
+"""The 19 pieces of 1010! as 0/1 arrays (all rotations included)."""
+
 import numpy as np
 
 PIECES: dict[str, np.ndarray] = {

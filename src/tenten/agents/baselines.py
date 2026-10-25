@@ -1,7 +1,11 @@
+"""Non-learning baselines to compare against."""
+
 import numpy as np
 
 
 class RandomAgent:
+    """Plays a random legal move."""
+
     def __init__(self, seed=None):
         self.rng = np.random.default_rng(seed)
 
@@ -11,6 +15,8 @@ class RandomAgent:
 
 
 class GreedyAgent:
+    """Plays the move that clears the most lines (ties broken at random)."""
+
     def __init__(self, seed=None):
         self.rng = np.random.default_rng(seed)
 
@@ -32,6 +38,7 @@ class GreedyAgent:
 
 
 class HeuristicAgent:
+    """Hand-made score: lines cleared + room left for every piece, minus blocking pieces."""
 
     def __init__(self, seed=None):
         self.rng = np.random.default_rng(seed)
@@ -48,11 +55,11 @@ class HeuristicAgent:
             new_boards, lines = engine.clear(engine.masks[k][ok] | env.board)
 
             n_places = engine.count_places(new_boards)
-            mobility = np.log1p(n_places).mean(axis=1)
+            mobility = np.log1p(n_places).mean(axis=1)  # how much room is left, per piece type
 
-            blocked = (n_places == 0).mean(axis=1)
+            blocked = (n_places == 0).mean(axis=1)  # fraction of piece types that no longer fit
             rest = [j for s, j in enumerate(env.hand) if j is not None and s != slot]
-            stuck = (n_places[:, rest] == 0).sum(axis=1)
+            stuck = (n_places[:, rest] == 0).sum(axis=1)  # pieces still in hand that would not fit
 
             value = lines + mobility - 3 * blocked - 10 * stuck
 

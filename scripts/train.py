@@ -1,5 +1,4 @@
-"""
-Entrena un agente con su configuración por defecto (CONFIG en tenten/training/<agente>.py).
+"""Trains one agent with its default CONFIG (see tenten/training/<agent>.py).
 
 uv run python scripts/train.py --agent ntuple
 uv run python scripts/train.py --agent dqn
@@ -15,6 +14,7 @@ from tenten.training import dqn, ntuple, tabular
 
 
 def main():
+    """Parses --agent and runs its training."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--agent", choices=["tabular", "dqn", "ntuple"], required=True)
     args = parser.parse_args()

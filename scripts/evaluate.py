@@ -1,4 +1,5 @@
-"""
+"""Evaluates the baselines on the full 10x10 game (100 games each) and logs them to MLflow.
+
 uv run python scripts/evaluate.py
 uv run mlflow ui --backend-store-uri sqlite:///mlflow.db      # http://127.0.0.1:5000
 """
@@ -13,6 +14,7 @@ from tenten.tracking import setup_mlflow
 
 
 def main():
+    """Plays and logs random, greedy and heuristic."""
     n_games = 100
     seed = 0
     env = TenTenEnv()

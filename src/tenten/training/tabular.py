@@ -1,3 +1,5 @@
+"""Tabular Q-learning training loop (only feasible on small boards)."""
+
 import os
 
 import mlflow
@@ -8,7 +10,7 @@ from tenten.evaluation import play_games
 from tenten.game.env import TenTenEnv
 from tenten.tracking import setup_mlflow
 
-CONFIG = {
+CONFIG = {  # 5x5 board with two L pieces that tile a 2x3 rectangle
     "size": 5,
     "pieces": ["small_L", "small_L_c"],
     "max_steps": 200,
@@ -26,23 +28,26 @@ CONFIG = {
 
 
 def make_env(c):
+    """Small environment described by the config (hand of one piece)."""
     return TenTenEnv(
         size=c["size"], piece_names=c["pieces"], hand_size=1, max_steps=c["max_steps"]
     )
 
 
 def tag(c):
+    """Short name of the environment, e.g. 5x5_small_L+small_L_c."""
     return f"{c['size']}x{c['size']}_{'+'.join(c['pieces'])}"
 
 
 def epsilon_at(step, c):
+    """Linear decay from eps_start to eps_end, then constant."""
     frac = min(1.0, step / c["eps_decay_steps"])
     return c["eps_start"] + frac * (c["eps_end"] - c["eps_start"])
 
 
 def train(c, make_env, experiment):
-    """Entrena en el entorno de make_env y lo registra en mlruns/<experiment>.
-    Devuelve el historial de evaluaciones y la ruta del mejor modelo."""
+    """Trains on make_env() and logs to MLflow experiment `experiment`.
+    Returns the evaluation history and the path of the best checkpoint."""
     env = make_env()
     eval_env = make_env()
     agent = TabularQAgent(
@@ -87,7 +92,7 @@ def train(c, make_env, experiment):
                 )
                 history.append({"step": step, **{k: float(np.mean(v)) for k, v in results.items()}})
                 print(
-                    f"paso {step:>8} | puntos {score:7.1f} | estados vistos {len(agent.Q):>7}",
+                    f"step {step:>8} | score {score:7.1f} | states seen {len(agent.Q):>7}",
                     flush=True,
                 )
                 if score > best_score:
@@ -95,6 +100,6 @@ def train(c, make_env, experiment):
                     agent.save(model_path)
 
         mlflow.log_artifact(model_path)
-        print(f"Mejor evaluación: {best_score:.1f} puntos")
+        print(f"Best evaluation: {best_score:.1f} points")
     return history, model_path
 

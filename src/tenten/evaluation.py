@@ -1,3 +1,5 @@
+"""Playing evaluation games and logging the baselines."""
+
 import mlflow
 import numpy as np
 
@@ -6,6 +8,7 @@ from tenten.tracking import setup_mlflow
 
 
 def play_games(agent, env, n_games, seed=0):
+    """Plays n_games greedy games (seeds seed, seed+1, ...); returns score, lines and steps lists."""
     scores, lines, steps = [], [], []
 
     for i in range(n_games):
@@ -25,7 +28,7 @@ def play_games(agent, env, n_games, seed=0):
 
 
 def log_baselines(c, make_env, experiment, seed=10_000):
-    """Las baselines en el mismo entorno, para poder comparar. Devuelve su puntuación media."""
+    """Evaluates the three baselines on make_env(), logs one MLflow run each and returns their mean scores."""
     env = make_env()
     scores = {}
     setup_mlflow(experiment)
