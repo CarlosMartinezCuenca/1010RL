@@ -8,7 +8,14 @@ import numpy as np
 
 from tenten.game.engine import Engine
 
-SHAPES = [(1, None), (None, 1), (2, 2), (3, 3), (2, 3), (3, 2)]  # (height, width); None = whole board
+SHAPES = [
+    (1, None),
+    (None, 1),
+    (2, 2),
+    (3, 3),
+    (2, 3),
+    (3, 2),
+]  # (height, width); None = whole board
 
 
 def symmetries(size):
@@ -84,7 +91,9 @@ class NTupleNetwork:
         """Moves V(board) a fraction alpha towards target; returns the TD error."""
         idx = self.indices(board[None, :])[0]
         error = target - self.weights[idx].sum()
-        np.add.at(self.weights, idx, alpha * error / len(idx))  # add.at: an index can repeat
+        np.add.at(
+            self.weights, idx, alpha * error / len(idx)
+        )  # add.at: an index can repeat
         return error
 
 
@@ -140,12 +149,14 @@ class NTupleAgent:
             afterstates.append(boards)
 
             rewards.append(self.reward_scale * points)
+
         actions = np.concatenate(actions)
         slots = np.concatenate(slots)
         afterstates = np.concatenate(afterstates)
         rewards = np.concatenate(rewards)
 
         values = self.net.value(afterstates)
+
         # If none of the remaining hand pieces fits, the game is certainly lost
         for slot in np.unique(slots):
             rest = [k for s, k in enumerate(hand) if k is not None and s != slot]
