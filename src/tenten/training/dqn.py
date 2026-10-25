@@ -102,7 +102,9 @@ def train(c, make_env, experiment):
                     step=step,
                 )
                 losses = []
-                history.append({"step": step, **{k: float(np.mean(v)) for k, v in results.items()}})
+                history.append(
+                    {"step": step, **{k: float(np.mean(v)) for k, v in results.items()}}
+                )
                 print(
                     f"step {step:>7} | score {score:7.1f} | epsilon {eps:.2f}",
                     flush=True,
@@ -115,4 +117,3 @@ def train(c, make_env, experiment):
         mlflow.log_artifact(model_path)
         print(f"Best evaluation: {best_score:.1f} points")
     return history, model_path
-

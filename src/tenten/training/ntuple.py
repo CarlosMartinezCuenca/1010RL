@@ -11,7 +11,8 @@ from tenten.tracking import setup_mlflow
 
 CONFIG = {  # defaults for the full 10x10 game
     "total_steps": 4_500_000,
-    "alpha_phases": [(0, 0.1), (2_000_000, 0.025), (3_500_000, 0.006)],  # (from step, alpha)
+    # (from step, alpha)
+    "alpha_phases": [(0, 0.1), (2_000_000, 0.025), (3_500_000, 0.006)],
     "gamma": 0.95,
     "reward_scale": 0.1,
     "loss_penalty": 0.0,  # value of a lost game; < 0 is extra reward shaping
@@ -98,7 +99,9 @@ def train(c, make_env, experiment):
                     step=step,
                 )
                 errors = []
-                history.append({"step": step, **{k: float(np.mean(v)) for k, v in results.items()}})
+                history.append(
+                    {"step": step, **{k: float(np.mean(v)) for k, v in results.items()}}
+                )
                 print(
                     f"step {step:>8} | score {score:8.1f} | alpha {agent.alpha}",
                     flush=True,
@@ -115,4 +118,3 @@ def train(c, make_env, experiment):
         mlflow.log_artifact(best_path)
         print(f"Best evaluation: {best_score:.1f} points")
     return history, best_path
-

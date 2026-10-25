@@ -9,7 +9,8 @@ Keys: space pause, right arrow step, +/- speed, R new game, Q quit.
 import argparse
 import os
 
-os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")  # must be set before importing pygame
+# Must be set before importing pygame
+os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
 
 import numpy as np  # noqa: E402
 import pygame  # noqa: E402
@@ -122,24 +123,26 @@ def draw(screen, fonts, env, info, name, action, game_over, paused, speed):
         small.render("space pause · → step · +/- speed", True, MUTED),
         (x, bottom - 40),
     )
-    screen.blit(
-        small.render("R new game · Q quit", True, MUTED), (x, bottom - 20)
-    )
+    screen.blit(small.render("R new game · Q quit", True, MUTED), (x, bottom - 20))
 
 
 def main():
     """Each tick alternates: choose a move (shown as a preview), then play it."""
     parser = argparse.ArgumentParser()
+    parser.add_argument("--agent", default="heuristic", help=" | ".join(NAMES))
     parser.add_argument(
-        "--agent", default="heuristic", help=" | ".join(NAMES)
+        "--model",
+        default="models/10x10_all/ntuple_seed0_best.npy",
+        help="agent weights",
     )
     parser.add_argument(
-        "--model", default="models/10x10_all/ntuple_seed0_best.npy", help="agent weights"
+        "--search", action="store_true", help="n-tuples with one-step search"
     )
-    parser.add_argument("--search", action="store_true", help="n-tuples with one-step search")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--size", type=int, default=10, help="board side")
-    parser.add_argument("--pieces", nargs="+", default=list(PIECES), help="pieces that can be dealt")
+    parser.add_argument(
+        "--pieces", nargs="+", default=list(PIECES), help="pieces that can be dealt"
+    )
     parser.add_argument("--hand-size", type=int, default=3)
     parser.add_argument("--max-steps", type=int, default=1000)
     parser.add_argument("--speed", type=float, default=1.0)
@@ -157,7 +160,9 @@ def main():
         hand_size=args.hand_size,
         max_steps=args.max_steps,
     )
-    agent_name = "ntuple_search" if args.agent == "ntuple" and args.search else args.agent
+    agent_name = (
+        "ntuple_search" if args.agent == "ntuple" and args.search else args.agent
+    )
     agent = load_agent(agent_name, env, args.model, seed=args.seed)
     name = NAMES[agent_name]
     seed = args.seed

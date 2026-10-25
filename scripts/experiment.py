@@ -145,7 +145,8 @@ def main():
     env = make_env()
     final = dict(baselines)
     capped = {}  # % of games that reach max_steps (the cap, not a loss)
-    players = {**models, **{extra: models["ntuple"] for extra in setup["extra"]}}  # search reuses the n-tuple weights
+    # Search reuses the n-tuple weights
+    players = {**models, **{extra: models["ntuple"] for extra in setup["extra"]}}
     for name, path in players.items():
         print(f"Final evaluation: {NAMES[name]}", flush=True)
         agent = load_agent(

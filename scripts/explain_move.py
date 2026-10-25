@@ -1,7 +1,7 @@
 """Plays a few moves with the trained n-tuple agent and explains its next decision.
 
 Usage:
-    uv run python explain_move.py --model models/ntuple_last.npy --moves 20 --out docs/explain.png
+    uv run python scripts/explain_move.py
 """
 
 import argparse

@@ -16,8 +16,10 @@ class Engine:
 
         self.masks = []  # masks[k][i]: flat board with piece k at its i-th position
         self.anchors = []  # anchors[k][i]: top-left cell of that position
-        self.rows = []  # rows[k][anchor]: index i of that anchor, or -1 if it doesn't fit
-        self.planes = []  # planes[k]: piece k drawn at the top-left corner (for observations)
+        # rows[k][anchor]: index i of that anchor, or -1 if it doesn't fit
+        self.rows = []
+        # planes[k]: piece k drawn at the top-left corner (for observations)
+        self.planes = []
 
         for piece in self.pieces:
             h, w = piece.shape
@@ -73,7 +75,8 @@ class Engine:
 
     def count_places(self, boards: np.ndarray) -> np.ndarray:
         """Number of valid positions of every piece on each board: (B, n) -> (B, n_pieces)."""
-        hits = boards.astype(np.float32) @ self.all_masks.T  # occupied cells under each position
+        # Occupied cells under each position
+        hits = boards.astype(np.float32) @ self.all_masks.T
         # Sum the free positions (hits == 0) within each piece's block of columns
         return np.add.reduceat((hits == 0).astype(np.int32), self.starts, axis=1)
 

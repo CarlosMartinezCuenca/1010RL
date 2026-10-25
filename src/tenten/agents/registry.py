@@ -29,7 +29,9 @@ def load_agent(name, env, model=None, hidden=256, seed=0):
         agent = TabularQAgent(env.action_space.n, seed=seed)
     elif name == "dqn":
         obs_size = env.observation_space.shape[0]
-        agent = DQNAgent(obs_size, env.action_space.n, hidden=hidden, buffer_size=1, seed=seed)
+        agent = DQNAgent(
+            obs_size, env.action_space.n, hidden=hidden, buffer_size=1, seed=seed
+        )
     elif name in ("ntuple", "ntuple_search"):
         agent = NTupleAgent(size=env.size, seed=seed)
     else:

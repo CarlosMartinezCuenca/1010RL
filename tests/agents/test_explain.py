@@ -1,3 +1,5 @@
+"""Tests for the exact per-cell explanations of the n-tuple agent."""
+
 import numpy as np
 
 from tenten.agents.explain import cell_contributions, compare_moves
