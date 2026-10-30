@@ -74,3 +74,14 @@ def test_simulated_move_matches_the_environment():
         assert np.isclose(reward, agent.reward_scale * env_reward)
         if terminated or truncated:
             obs, info = env.reset()
+
+
+def test_search_with_one_piece_is_the_plain_agent():
+    # With a single piece in hand there is nothing to search: same move as the agent
+    env = TenTenEnv()
+    agent = NTupleAgent()
+    agent.net.weights = np.random.default_rng(0).normal(size=len(agent.net.weights))
+    obs, info = env.reset(seed=0)
+    env.hand = [env.hand[0], None, None]
+    info = {"action_mask": env.action_mask()}
+    assert SearchAgent(agent).act(env, info) == agent.act(env, info)

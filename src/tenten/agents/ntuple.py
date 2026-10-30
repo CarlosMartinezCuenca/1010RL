@@ -203,25 +203,30 @@ class NTupleAgent:
 
 
 class SearchAgent:
-    """One-step lookahead with a trained NTupleAgent, using the known pieces left in hand."""
+    """Searches every piece left in hand (they are known), and only then trusts V."""
 
-    def __init__(self, agent, top_k=12):
+    def __init__(self, agent, top_k=10):
         self.agent = agent
         self.top_k = top_k
 
     def act(self, env, info):
-        """Re-scores the top_k moves with the best follow-up move of the remaining pieces."""
+        """Plays the first move of the best sequence for the pieces in hand."""
+        actions, scores = self.search(env, env.board, env.hand)
+        return int(actions[np.argmax(scores)])
+
+    def search(self, env, board, hand):
+        """The top_k moves for this board and hand, re-scored with the best continuation."""
         a = self.agent
-        actions, slots, afterstates, rewards, scores = a.candidates(env)
-        best_action, best_score = actions[np.argmax(scores)], -np.inf
-        for i in np.argsort(-scores)[: self.top_k]:
-            rest = [k if s != slots[i] else None for s, k in enumerate(env.hand)]
-            if all(k is None for k in rest):
-                score = scores[i]  # last piece: the next hand is random, no lookahead
-            else:
-                *_, next_scores = a.candidates(env, board=afterstates[i], hand=rest)
+        actions, slots, afterstates, rewards, scores = a.candidates(
+            env, board=board, hand=hand
+        )
+        top = np.argsort(-scores)[: self.top_k]
+        for i in top:
+            rest = [k if s != slots[i] else None for s, k in enumerate(hand)]
+            if any(
+                k is not None for k in rest
+            ):  # pieces left: look further instead of using V
+                _, next_scores = self.search(env, afterstates[i], rest)
                 best_next = next_scores.max() if len(next_scores) else a.loss_penalty
-                score = rewards[i] + a.gamma * best_next
-            if score > best_score:
-                best_action, best_score = actions[i], score
-        return int(best_action)
+                scores[i] = rewards[i] + a.gamma * best_next
+        return actions[top], scores[top]

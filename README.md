@@ -3,10 +3,10 @@
 Reinforcement learning agents that learn to play **1010!**: place pieces on a 10×10 board, clear full rows and columns, and survive as long as possible. Everything runs on CPU.
 
 <p align="center">
-  <img src="results/10x10_all/best_ntuple_search.gif" alt="N-tuple network with one-step search playing 1010!" width="600">
+  <img src="results/10x10_all/best_ntuple_search.gif" alt="N-tuple network with search playing 1010!" width="600">
 </p>
 
-<p align="center"><em>N-tuple network + one-step search playing the full game.</em></p>
+<p align="center"><em>N-tuple network + search over the pieces in hand, playing the full game.</em></p>
 
 ## Agents
 
@@ -16,7 +16,7 @@ Reinforcement learning agents that learn to play **1010!**: place pieces on a 10
 | Tabular Q-learning        | One Q-value per visited (state, action); only feasible on small boards                         |
 | DQN                       | Double DQN with action masking, replay buffer and target network                               |
 | N-tuples                  | TD(0) on afterstates with an n-tuple network that shares weights across the 8 board symmetries |
-| N-tuples + search         | The trained n-tuple network plus a one-step lookahead using the pieces left in hand            |
+| N-tuples + search         | The trained n-tuple network searching every piece left in hand before trusting V               |
 
 All agents use the same reward: the points of each move (cells placed + line bonus).
 
@@ -30,7 +30,7 @@ Full game: 10×10 board, all 19 pieces, hand of 3, at most 1000 pieces per game.
 
 | Agent                 | Mean score | Games that reach the 1000-piece cap |
 | --------------------- | ---------: | ----------------------------------: |
-| **N-tuples + search** |   **8542** |                             **90%** |
+| **N-tuples + search** |   **8718** |                             **96%** |
 | N-tuples              |       3418 |                                 14% |
 | Heuristic             |       1109 |                                   – |
 | Greedy                |        120 |                                   – |
@@ -39,8 +39,8 @@ Full game: 10×10 board, all 19 pieces, hand of 3, at most 1000 pieces per game.
 
 _– : not measured for the baselines._
 
-**N-tuples + search survives the whole game in 90% of the games**, so its mean score is a
-lower bound: the cap stops the game, not the agent. Even so, it scores 7.7× the
+**N-tuples + search survives the whole game in 96% of the games**, so its mean score is a
+lower bound: the cap stops the game, not the agent. Even so, it scores 7.9× the
 hand-crafted heuristic.
 
 The n-tuple network generalises across boards it has never seen, while the DQN does not learn in this setting. On a small deterministic version (5×5, one piece) the ranking flips and the DQN wins, since it can memorise a sequence that never loses. All figures are in [`results/`](results/).

@@ -3,7 +3,8 @@ Writes figures and summary.json to results/<setup>/ and logs everything to MLflo
 
 uv run python scripts/experiment.py --setup 5x5_small_L
 uv run python scripts/experiment.py --setup 10x10_all
-uv run python scripts/experiment.py --setup 10x10_all --only ntuple    # retrain only that model
+uv run python scripts/experiment.py --setup 10x10_all --only ntuple    # retrain only that model (overwrites it)
+uv run python scripts/experiment.py --setup 10x10_all --eval-only      # re-run only the final evaluation
 uv run mlflow ui --backend-store-uri sqlite:///mlflow.db      # http://127.0.0.1:5000
 """
 
@@ -96,6 +97,11 @@ def main():
         choices=list(TRAINERS),
         help="retrain only these models and reuse the rest from summary.json",
     )
+    parser.add_argument(
+        "--eval-only",
+        action="store_true",
+        help="no training: re-run the final evaluation of the saved models",
+    )
     args = parser.parse_args()
 
     setup = SETUPS[args.setup]
@@ -116,14 +122,13 @@ def main():
         for name, overrides in setup["configs"].items()
     }
 
-    if args.only:
+    retrain = [] if args.eval_only else args.only or []
+    if args.only or args.eval_only:
         with open(f"{results_dir}/summary.json", encoding="utf-8") as f:
             previous = json.load(f)
         baselines = {n: previous["final_scores"][n] for n in BASELINES}
         histories, models = previous["histories"], previous["models"]
-        delete_runs(
-            args.setup, [f"{n}_seed{SEED}" for n in args.only] + [f"summary_seed{SEED}"]
-        )
+        delete_runs(args.setup, [f"{n}_seed{SEED}" for n in retrain] + [f"summary_seed{SEED}"])
     else:
         baseline_config = {
             **common,
@@ -135,7 +140,7 @@ def main():
         )
         histories, models = {}, {}
 
-    for name in args.only or configs:
+    for name in retrain if (args.only or args.eval_only) else configs:
         print(f"\n=== {NAMES[name]} ===", flush=True)
         histories[name], models[name] = TRAINERS[name].train(
             configs[name], make_env, args.setup

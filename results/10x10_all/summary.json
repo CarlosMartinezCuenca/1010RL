@@ -1,17 +1,17 @@
 {
   "setup": "10x10_all",
   "final_scores": {
-    "random": 78.54,
-    "greedy": 120.42,
     "heuristic": 1108.94,
+    "greedy": 120.42,
+    "random": 78.54,
     "dqn": 97.92,
     "ntuple": 3418.44,
-    "ntuple_search": 8541.76
+    "ntuple_search": 8718.38
   },
   "capped_pct": {
     "dqn": 0.0,
     "ntuple": 14.000000000000002,
-    "ntuple_search": 90.0
+    "ntuple_search": 96.0
   },
   "best": "ntuple_search",
   "best_model": "models/10x10_all/ntuple_seed0_best.npy",
