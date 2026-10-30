@@ -28,9 +28,10 @@ def play_games(agent, env, n_games, seed=0):
 
 
 def log_baselines(c, make_env, experiment, seed=10_000):
-    """Evaluates the three baselines on make_env(), logs one MLflow run each and returns their mean scores."""
+    """Plays the three baselines on make_env() and logs one MLflow run each.
+    Returns the per-game results of each baseline."""
     env = make_env()
-    scores = {}
+    games = {}
     setup_mlflow(experiment)
     for name, baseline in [
         ("random", RandomAgent(seed=c["seed"])),
@@ -39,13 +40,7 @@ def log_baselines(c, make_env, experiment, seed=10_000):
     ]:
         with mlflow.start_run(run_name=f"{name}_seed{c['seed']}"):
             mlflow.log_params({"agent": name, **c})
-            results = play_games(baseline, env, c["baseline_games"], seed=seed)
-            scores[name] = float(np.mean(results["score"]))
-            mlflow.log_metrics(
-                {
-                    "eval_score": scores[name],
-                    "eval_lines": float(np.mean(results["lines"])),
-                    "eval_steps": float(np.mean(results["steps"])),
-                }
-            )
-    return scores
+            games[name] = play_games(baseline, env, c["baseline_games"], seed=seed)
+            means = {f"eval_{k}": float(np.mean(v)) for k, v in games[name].items()}
+            mlflow.log_metrics(means)
+    return games

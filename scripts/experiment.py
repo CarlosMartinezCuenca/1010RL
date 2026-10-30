@@ -49,6 +49,7 @@ SETUPS = {
         "eval_every": 20_000,
         "eval_games": 5,
         "final_games": 20,
+        "final_max_steps": 200,
         "configs": {
             "tabular": {
                 "size": 5,
@@ -78,6 +79,8 @@ SETUPS = {
         "eval_every": 50_000,
         "eval_games": 10,
         "final_games": 50,
+        # Cap of the final evaluation only: at 1000 the best agents almost always hit it
+        "final_max_steps": 5000,
         "configs": {
             "dqn": {"eps_decay_steps": 333_333},
             "ntuple": {"alpha_phases": phases(1_000_000)},
@@ -111,6 +114,9 @@ def main():
     def make_env():
         return TenTenEnv(**setup["env"])
 
+    def make_final_env():
+        return TenTenEnv(**{**setup["env"], "max_steps": setup["final_max_steps"]})
+
     common = {
         "total_steps": setup["total_steps"],
         "eval_every": setup["eval_every"],
@@ -123,22 +129,22 @@ def main():
     }
 
     retrain = [] if args.eval_only else args.only or []
+    histories, models = {}, {}
     if args.only or args.eval_only:
         with open(f"{results_dir}/summary.json", encoding="utf-8") as f:
             previous = json.load(f)
-        baselines = {n: previous["final_scores"][n] for n in BASELINES}
         histories, models = previous["histories"], previous["models"]
-        delete_runs(args.setup, [f"{n}_seed{SEED}" for n in retrain] + [f"summary_seed{SEED}"])
-    else:
-        baseline_config = {
-            **common,
-            "baseline_games": setup["final_games"],
-            **setup["env"],
-        }
-        baselines = log_baselines(
-            baseline_config, make_env, args.setup, seed=FINAL_SEED
-        )
-        histories, models = {}, {}
+        old_runs = [f"{n}_seed{SEED}" for n in [*BASELINES, *retrain]]
+        delete_runs(args.setup, old_runs + [f"summary_seed{SEED}"])
+
+    # Baselines are re-evaluated every time, so all agents play with the same cap
+    baseline_config = {
+        **common,
+        **setup["env"],
+        "max_steps": setup["final_max_steps"],
+        "baseline_games": setup["final_games"],
+    }
+    games = log_baselines(baseline_config, make_final_env, args.setup, seed=FINAL_SEED)
 
     for name in retrain if (args.only or args.eval_only) else configs:
         print(f"\n=== {NAMES[name]} ===", flush=True)
@@ -147,9 +153,7 @@ def main():
         )
 
     # Final evaluation: each agent's best checkpoint on the same games as the baselines
-    env = make_env()
-    final = dict(baselines)
-    capped = {}  # % of games that reach max_steps (the cap, not a loss)
+    env = make_final_env()
     # Search reuses the n-tuple weights
     players = {**models, **{extra: models["ntuple"] for extra in setup["extra"]}}
     for name, path in players.items():
@@ -157,12 +161,17 @@ def main():
         agent = load_agent(
             name, env, path, hidden=train_dqn.CONFIG["hidden"], seed=SEED
         )
-        results = play_games(agent, env, setup["final_games"], seed=FINAL_SEED)
-        final[name] = float(np.mean(results["score"]))
-        capped[name] = 100 * float(np.mean(np.array(results["steps"]) >= env.max_steps))
+        games[name] = play_games(agent, env, setup["final_games"], seed=FINAL_SEED)
+
+    final = {n: float(np.mean(g["score"])) for n, g in games.items()}
+    # % of games that reach the cap (the game is stopped, not lost)
+    capped = {
+        n: 100 * float(np.mean(np.array(g["steps"]) >= env.max_steps))
+        for n, g in games.items()
+    }
     best = max(players, key=final.get)
 
-    references = {NAMES[n]: baselines[n] for n in BASELINES}
+    references = {NAMES[n]: final[n] for n in BASELINES}
     total = setup["total_steps"]
     plot_curves(
         histories,
@@ -186,8 +195,10 @@ def main():
 
     summary = {
         "setup": args.setup,
+        "final_max_steps": setup["final_max_steps"],
         "final_scores": final,
         "capped_pct": capped,
+        "games": games,  # per-game score, lines and steps of the final evaluation
         "best": best,
         "best_model": players[best],
         "models": models,
@@ -203,8 +214,8 @@ def main():
 
     print("\nFinal score:")
     for name in sorted(final, key=final.get, reverse=True):
-        cap = f"  ({capped[name]:.0f}% reach the cap)" if name in capped else ""
-        print(f"  {NAMES[name]:<20} {final[name]:7.1f}{cap}")
+        cap = f"({capped[name]:.0f}% reach the cap)"
+        print(f"  {NAMES[name]:<20} {final[name]:7.1f}  {cap}")
     print(f"Best: {NAMES[best]} -> {players[best]}")
 
 

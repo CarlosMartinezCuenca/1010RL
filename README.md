@@ -22,26 +22,24 @@ All agents use the same reward: the points of each move (cells placed + line bon
 
 ## Results
 
-Full game: 10×10 board, all 19 pieces, hand of 3, at most 1000 pieces per game. DQN and n-tuples get the same budget of 1M training steps; every agent is evaluated on the same 50 games.
+Full game: 10×10 board, all 19 pieces, hand of 3. DQN and n-tuples get the same budget of 1M training steps (games capped at 1000 pieces); every agent is then evaluated on the same 50 games, capped at 5000 pieces.
 
 <p align="center">
   <img src="results/10x10_all/final_comparison.png" alt="Mean score of each agent on the 10x10 game" width="700">
 </p>
 
-| Agent                 | Mean score | Games that reach the 1000-piece cap |
-| --------------------- | ---------: | ----------------------------------: |
-| **N-tuples + search** |   **8718** |                             **96%** |
-| N-tuples              |       3418 |                                 14% |
-| Heuristic             |       1109 |                                   – |
-| Greedy                |        120 |                                   – |
-| DQN                   |         98 |                                  0% |
-| Random                |         79 |                                   – |
+| Agent                 | Mean score | Mean pieces placed | Games that reach the 5000-piece cap |
+| --------------------- | ---------: | -----------------: | ----------------------------------: |
+| **N-tuples + search** | **40020**  |           **4453** |                             **74%** |
+| N-tuples              |       3856 |                446 |                                  0% |
+| Heuristic             |       1109 |                149 |                                  0% |
+| Greedy                |        120 |                 24 |                                  0% |
+| DQN                   |         98 |                 22 |                                  0% |
+| Random                |         79 |                 19 |                                  0% |
 
-_– : not measured for the baselines._
-
-**N-tuples + search survives the whole game in 96% of the games**, so its mean score is a
-lower bound: the cap stops the game, not the agent. Even so, it scores 7.9× the
-hand-crafted heuristic.
+**N-tuples + search reaches the 5000-piece cap in 74% of the games**, so its mean score is a
+lower bound: the cap stops the game, not the agent. It scores 36× the hand-crafted
+heuristic and 10× the same network without search.
 
 The n-tuple network generalises across boards it has never seen, while the DQN does not learn in this setting. On a small deterministic version (5×5, one piece) the ranking flips and the DQN wins, since it can memorise a sequence that never loses. All figures are in [`results/`](results/).
 
