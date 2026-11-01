@@ -3,6 +3,10 @@ Writes figures and summary.json to results/<setup>/ and logs everything to MLflo
 
 uv run python scripts/experiment.py --setup 5x5_small_L
 uv run python scripts/experiment.py --setup 10x10_all
+uv run python scripts/experiment.py --setup 10x10_lambda     # n-tuples with TD(0.5)
+uv run python scripts/experiment.py --setup 10x10_lambda08   # n-tuples with TD(0.8)
+uv run python scripts/experiment.py --setup 10x10_gamma99    # TD(0.5) and gamma 0.99
+uv run python scripts/experiment.py --setup 10x10_big_tuples # TD(0.5) and 2x4 tuples
 uv run python scripts/experiment.py --setup 10x10_all --only ntuple    # retrain only that model (overwrites it)
 uv run python scripts/experiment.py --setup 10x10_all --eval-only      # re-run only the final evaluation
 uv run mlflow ui --backend-store-uri sqlite:///mlflow.db      # http://127.0.0.1:5000
@@ -12,21 +16,28 @@ import argparse
 import json
 import os
 
-import mlflow
-import numpy as np
+# One thread per process (set before importing NumPy): with several processes running,
+# NumPy's multi-threaded matmuls slow each other down instead of helping
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 
-from tenten.agents.registry import NAMES, load_agent
-from tenten.evaluation import log_baselines, play_games
-from tenten.game.env import TenTenEnv
-from tenten.game.pieces import PIECES
-from tenten.plots import plot_curves, plot_final
-from tenten.tracking import delete_runs, setup_mlflow
-from tenten.training import dqn as train_dqn
-from tenten.training import ntuple as train_ntuple
-from tenten.training import tabular as train_tabular
+import mlflow  # noqa: E402
+import numpy as np  # noqa: E402
+
+from tenten.agents.ntuple import SHAPES  # noqa: E402
+from tenten.agents.registry import NAMES, load_agent  # noqa: E402
+from tenten.evaluation import log_baselines, play_games  # noqa: E402
+from tenten.game.env import TenTenEnv  # noqa: E402
+from tenten.game.pieces import PIECES  # noqa: E402
+from tenten.plots import plot_curves, plot_final  # noqa: E402
+from tenten.tracking import delete_runs, setup_mlflow  # noqa: E402
+from tenten.training import dqn as train_dqn  # noqa: E402
+from tenten.training import ntuple as train_ntuple  # noqa: E402
+from tenten.training import tabular as train_tabular  # noqa: E402
 
 SEED = 0
 FINAL_SEED = 20_000  # every agent's final evaluation plays the same games
+WORKERS = 4  # processes for the final evaluation (one per physical core)
 BASELINES = ("heuristic", "greedy", "random")
 TRAINERS = {"tabular": train_tabular, "dqn": train_dqn, "ntuple": train_ntuple}
 
@@ -77,17 +88,30 @@ SETUPS = {
         },
         "total_steps": 1_000_000,
         "eval_every": 50_000,
-        "eval_games": 10,
+        "eval_games": 30,
         "final_games": 50,
         # Cap of the final evaluation only: at 1000 the best agents almost always hit it
         "final_max_steps": 5000,
         "configs": {
             "dqn": {"eps_decay_steps": 333_333},
-            "ntuple": {"alpha_phases": phases(1_000_000)},
+            "ntuple": {"alpha_phases": phases(1_000_000), "eval_workers": WORKERS},
         },
         "extra": ["ntuple_search"],  # n-tuples + search, final evaluation only
     },
 }
+
+
+def ntuple_setup(**changes):
+    """10x10_all with only the n-tuples, with some training settings changed."""
+    configs = {"ntuple": {**SETUPS["10x10_all"]["configs"]["ntuple"], **changes}}
+    return {**SETUPS["10x10_all"], "configs": configs}
+
+
+# Ablations of the n-tuple training; compare each with 10x10_all
+SETUPS["10x10_lambda"] = ntuple_setup(lam=0.5)
+SETUPS["10x10_lambda08"] = ntuple_setup(lam=0.8)
+SETUPS["10x10_gamma99"] = ntuple_setup(lam=0.5, gamma=0.99)
+SETUPS["10x10_big_tuples"] = ntuple_setup(lam=0.5, shapes=SHAPES + [(2, 4), (4, 2)])
 
 
 def main():
@@ -144,7 +168,9 @@ def main():
         "max_steps": setup["final_max_steps"],
         "baseline_games": setup["final_games"],
     }
-    games = log_baselines(baseline_config, make_final_env, args.setup, seed=FINAL_SEED)
+    games = log_baselines(
+        baseline_config, make_final_env, args.setup, FINAL_SEED, WORKERS
+    )
 
     for name in retrain if (args.only or args.eval_only) else configs:
         print(f"\n=== {NAMES[name]} ===", flush=True)
@@ -159,9 +185,14 @@ def main():
     for name, path in players.items():
         print(f"Final evaluation: {NAMES[name]}", flush=True)
         agent = load_agent(
-            name, env, path, hidden=train_dqn.CONFIG["hidden"], seed=SEED
+            name,
+            env,
+            path,
+            hidden=train_dqn.CONFIG["hidden"],
+            seed=SEED,
+            shapes=configs["ntuple"]["shapes"],
         )
-        games[name] = play_games(agent, env, setup["final_games"], seed=FINAL_SEED)
+        games[name] = play_games(agent, env, setup["final_games"], FINAL_SEED, WORKERS)
 
     final = {n: float(np.mean(g["score"])) for n, g in games.items()}
     # % of games that reach the cap (the game is stopped, not lost)

@@ -1,11 +1,11 @@
-"""N-tuple network training loop: TD(0) on afterstates."""
+"""N-tuple network training loop: TD(lambda) on afterstates."""
 
 import os
 
 import mlflow
 import numpy as np
 
-from tenten.agents.ntuple import NTupleAgent, SearchAgent
+from tenten.agents.ntuple import SHAPES, NTupleAgent, SearchAgent
 from tenten.evaluation import play_games
 from tenten.tracking import setup_mlflow
 
@@ -14,6 +14,7 @@ CONFIG = {  # defaults for the full 10x10 game
     # (from step, alpha)
     "alpha_phases": [(0, 0.1), (2_000_000, 0.025), (3_500_000, 0.006)],
     "gamma": 0.95,
+    "lam": 0.0,  # eligibility trace decay: 0 = TD(0)
     "reward_scale": 0.1,
     "loss_penalty": 0.0,  # value of a lost game; < 0 is extra reward shaping
     "eps_start": 0.05,
@@ -21,6 +22,8 @@ CONFIG = {  # defaults for the full 10x10 game
     "eps_decay_steps": 50_000,
     "eval_every": 100_000,
     "eval_games": 30,
+    "eval_workers": 1,  # processes for the evaluation games
+    "shapes": SHAPES,
     "seed": 0,
 }
 
@@ -48,8 +51,10 @@ def train(c, make_env, experiment):
     agent = NTupleAgent(
         size=env.size,
         gamma=c["gamma"],
+        lam=c["lam"],
         reward_scale=c["reward_scale"],
         loss_penalty=c["loss_penalty"],
+        shapes=c["shapes"],
         seed=c["seed"],
     )
     run_name = f"ntuple_seed{c['seed']}"
@@ -83,10 +88,13 @@ def train(c, make_env, experiment):
             previous = afterstate
             if terminated or truncated:
                 previous = None
+                agent.end_game()
                 obs, info = env.reset()
 
             if step % c["eval_every"] == 0:
-                results = play_games(agent, eval_env, c["eval_games"], seed=10_000)
+                results = play_games(
+                    agent, eval_env, c["eval_games"], 10_000, c["eval_workers"]
+                )
                 score = float(np.mean(results["score"]))
                 mlflow.log_metrics(
                     {
@@ -112,7 +120,9 @@ def train(c, make_env, experiment):
                     agent.save(best_path)
 
         for name, player in [("final", agent), ("final_search", SearchAgent(agent))]:
-            results = play_games(player, eval_env, c["eval_games"], seed=10_000)
+            results = play_games(
+                player, eval_env, c["eval_games"], 10_000, c["eval_workers"]
+            )
             mlflow.log_metric(f"{name}_score", float(np.mean(results["score"])))
         mlflow.log_artifact(last_path)
         mlflow.log_artifact(best_path)

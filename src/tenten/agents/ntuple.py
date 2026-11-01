@@ -36,13 +36,13 @@ def symmetries(size):
 class NTupleNetwork:
     """Value function V(board) as a sum of lookup tables."""
 
-    def __init__(self, size=10):
+    def __init__(self, size=10, shapes=SHAPES):
         self.size = size
         tuples = []
         table_sizes = []
         seen = set()
 
-        for h, w in SHAPES:
+        for h, w in shapes:
             h = size if h is None else h
             w = size if w is None else w
             for row in range(size - h + 1):
@@ -70,6 +70,7 @@ class NTupleNetwork:
         # A table of k cells has 2^k weights; all tables live in one vector, one after another
         offsets = np.cumsum([0] + [2**k for k in table_sizes])
         self.weights = np.zeros(offsets[-1])
+        self.trace = np.zeros_like(self.weights)  # eligibility trace for TD(lambda)
 
         # powers[cell, t] = 2^j if cell is the j-th cell of tuple t, so the pattern index is a matmul
         self.powers = np.zeros((size * size, len(tuples)), dtype=np.float32)
@@ -87,14 +88,19 @@ class NTupleNetwork:
         """V of a batch of boards."""
         return self.weights[self.indices(boards)].sum(axis=1)
 
-    def update(self, board, target, alpha):
-        """Moves V(board) a fraction alpha towards target; returns the TD error."""
+    def update(self, board, target, alpha, decay=0.0):
+        """Moves V(board), and the earlier boards still in the trace, towards target.
+        decay = gamma * lambda (0 gives plain TD(0)). Returns the TD error."""
         idx = self.indices(board[None, :])[0]
         error = target - self.weights[idx].sum()
-        np.add.at(
-            self.weights, idx, alpha * error / len(idx)
-        )  # add.at: an index can repeat
+        self.trace *= decay  # earlier boards count less and less
+        np.add.at(self.trace, idx, 1 / len(idx))  # add.at: an index can repeat
+        self.weights += alpha * error * self.trace
         return error
+
+    def reset_trace(self):
+        """Forgets the boards of the previous game."""
+        self.trace[:] = 0
 
 
 def place_everywhere(env, board, piece):
@@ -120,13 +126,16 @@ class NTupleAgent:
         size=10,
         alpha=0.1,
         gamma=0.95,
+        lam=0.0,
         reward_scale=0.1,
         loss_penalty=0.0,
+        shapes=SHAPES,
         seed=0,
     ):
-        self.net = NTupleNetwork(size)
+        self.net = NTupleNetwork(size, shapes)
         self.alpha = alpha
         self.gamma = gamma
+        self.lam = lam  # TD(lambda); 0 = TD(0)
 
         self.reward_scale = reward_scale
         self.loss_penalty = loss_penalty
@@ -186,8 +195,12 @@ class NTupleAgent:
         return int(actions[np.argmax(scores)])
 
     def learn(self, afterstate, target):
-        """TD update of one afterstate; returns the error."""
-        return self.net.update(afterstate, target, self.alpha)
+        """TD(lambda) update of one afterstate; returns the error."""
+        return self.net.update(afterstate, target, self.alpha, self.gamma * self.lam)
+
+    def end_game(self):
+        """Clears the eligibility trace between games."""
+        self.net.reset_trace()
 
     def value(self, afterstate):
         """V of a single afterstate."""

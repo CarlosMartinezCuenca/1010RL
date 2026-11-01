@@ -43,6 +43,20 @@ heuristic and 10× the same network without search.
 
 The n-tuple network generalises across boards it has never seen, while the DQN does not learn in this setting. On a small deterministic version (5×5, one piece) the ranking flips and the DQN wins, since it can memorise a sequence that never loses. All figures are in [`results/`](results/).
 
+### Ablations
+
+Changes to the n-tuple training on the same 50 final games (`--setup 10x10_lambda`, `10x10_gamma99`, `10x10_big_tuples`):
+
+| Training                       | N-tuples | N-tuples + search (games at the cap) |
+| ------------------------------ | -------: | -----------------------------------: |
+| TD(0), γ = 0.95 (default)      |     3856 |                          40020 (74%) |
+| TD(0.5), γ = 0.95              |     5623 |                          36741 (62%) |
+| **TD(0.5), γ = 0.99**          | **6862** |                      **40935 (76%)** |
+| TD(0.5), γ = 0.95, + 2×4 tuples |    4518 |                          37484 (66%) |
+
+Eligibility traces with a longer horizon almost double the network alone (+3006 points, 95% CI [+1376, +4707]). With search the differences are not significant: most games already reach the cap.
+The search width `top_k` = 10 is the best trade-off (`scripts/compare_top_k.py`): 5 loses about 4000 points and 20 is 4× slower for no gain.
+
 ## Project structure
 
 ```

@@ -2,7 +2,7 @@
 
 from tenten.agents.baselines import GreedyAgent, HeuristicAgent, RandomAgent
 from tenten.agents.dqn import DQNAgent
-from tenten.agents.ntuple import NTupleAgent, SearchAgent
+from tenten.agents.ntuple import SHAPES, NTupleAgent, SearchAgent
 from tenten.agents.tabular import TabularQAgent
 
 NAMES = {  # display names used in plots and the visualizer
@@ -16,8 +16,9 @@ NAMES = {  # display names used in plots and the visualizer
 }
 
 
-def load_agent(name, env, model=None, hidden=256, seed=0):
-    """Builds agent `name` for `env`; learning agents load their weights from `model`."""
+def load_agent(name, env, model=None, hidden=256, seed=0, shapes=SHAPES, top_k=10):
+    """Builds agent `name` for `env`; learning agents load their weights from `model`.
+    shapes must match the n-tuple model; top_k is the width of the search."""
     if name == "random":
         return RandomAgent(seed=seed)
     if name == "greedy":
@@ -33,9 +34,9 @@ def load_agent(name, env, model=None, hidden=256, seed=0):
             obs_size, env.action_space.n, hidden=hidden, buffer_size=1, seed=seed
         )
     elif name in ("ntuple", "ntuple_search"):
-        agent = NTupleAgent(size=env.size, seed=seed)
+        agent = NTupleAgent(size=env.size, shapes=shapes, seed=seed)
     else:
         raise ValueError(f"Unknown agent: {name}")
 
     agent.load(model)
-    return SearchAgent(agent) if name == "ntuple_search" else agent
+    return SearchAgent(agent, top_k) if name == "ntuple_search" else agent

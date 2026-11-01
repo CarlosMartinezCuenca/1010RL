@@ -85,3 +85,25 @@ def test_search_with_one_piece_is_the_plain_agent():
     env.hand = [env.hand[0], None, None]
     info = {"action_mask": env.action_mask()}
     assert SearchAgent(agent).act(env, info) == agent.act(env, info)
+
+
+def test_traces_also_update_earlier_boards():
+    first, second = np.zeros(100, dtype=bool), np.zeros(100, dtype=bool)
+    first[:5], second[50:55] = True, True
+    plain, traced = NTupleNetwork(10), NTupleNetwork(10)
+    for net, decay in [(plain, 0.0), (traced, 0.9)]:
+        net.update(first, target=1.0, alpha=0.1, decay=decay)
+        net.update(second, target=1.0, alpha=0.1, decay=decay)
+    # With a trace, the second update also pushes the first board towards its target
+    assert traced.value(first[None, :])[0] > plain.value(first[None, :])[0]
+
+
+def test_reset_trace_forgets_the_previous_game():
+    first, second = np.zeros(100, dtype=bool), np.zeros(100, dtype=bool)
+    first[:5], second[50:55] = True, True
+    plain, traced = NTupleNetwork(10), NTupleNetwork(10)
+    for net, decay in [(plain, 0.0), (traced, 0.9)]:
+        net.update(first, target=1.0, alpha=0.1, decay=decay)
+        net.reset_trace()
+        net.update(second, target=1.0, alpha=0.1, decay=decay)
+    assert np.allclose(traced.weights, plain.weights)
